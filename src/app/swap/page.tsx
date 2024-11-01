@@ -1,6 +1,125 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { OdosService } from "@/lib/services/odos";
+import { TokenInfo } from "@/lib/types";
+import CryptoSelect from "@/components/CryptoSelect";
+const odosService = new OdosService();
 
 const Swap = () => {
+  const [inputAmount, setInputAmount] = useState<string>("1");
+  const [outputAmount, setOutputAmount] = useState<string>("2503.23");
+  const [selectedInputToken, setSelectedInputToken] = useState<TokenInfo>({
+    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // ETH
+    symbol: "ETH",
+    logo: "/eth-logo.png",
+    decimals: 18,
+  });
+  const [selectedOutputToken, setSelectedOutputToken] = useState<TokenInfo>({
+    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
+    symbol: "USDT",
+    logo: "/usdt-logo.png",
+    decimals: 6,
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [quote, setQuote] = useState<any>(null);
+  const [userBalance, setUserBalance] = useState<string>("0");
+  const [selectedChain, setSelectedChain] = useState<number>(1); // Ethereum mainnet
+  const [tokens, setTokens] = useState<any[]>([]);
+
+  const handleInputChange = async (value: string) => {
+    setInputAmount(value);
+    if (value && !isNaN(Number(value))) {
+      await handleGetQuote(value);
+    }
+  };
+
+  // Handle token selection
+  const handleTokenSelect = (token: TokenInfo, isInput: boolean) => {
+    if (isInput) {
+      setSelectedInputToken(token);
+    } else {
+      setSelectedOutputToken(token);
+    }
+    handleGetQuote();
+  };
+
+  const loadTokens = async () => {
+    setIsLoading(true);
+    try {
+      const tokensData = await odosService.getChainTokens(selectedChain);
+      console.log(tokensData, "tokensData");
+      setTokens(Array.isArray(tokensData) ? tokensData : []);
+    } catch (err) {
+      setError("Failed to load tokens");
+      setTokens([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get quote from Odos
+  const handleGetQuote = async (amount?: string) => {
+    if (!selectedInputToken || !selectedOutputToken) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const quoteData = await odosService.getQuote({
+        chainId: selectedChain,
+        compact: true,
+        gasPrice: 20,
+        inputTokens: [
+          {
+            amount: amount || inputAmount,
+            tokenAddress: selectedInputToken.address,
+          },
+        ],
+        outputTokens: [
+          {
+            proportion: 1,
+            tokenAddress: selectedOutputToken.address,
+          },
+        ],
+        referralCode: 0,
+        slippageLimitPercent: 0.3,
+        sourceBlacklist: [],
+        sourceWhitelist: [],
+        userAddr: "0x", // Add user address here
+      });
+      setQuote(quoteData);
+      setOutputAmount(quoteData.outputTokens[0].amount);
+    } catch (err) {
+      setError("Failed to get quote");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle max button click
+  const handleMaxClick = () => {
+    setInputAmount(userBalance);
+    handleGetQuote(userBalance);
+  };
+
+  // Handle swap tokens
+  const handleSwapTokens = () => {
+    const tempToken = selectedInputToken;
+    setSelectedInputToken(selectedOutputToken);
+    setSelectedOutputToken(tempToken);
+    handleGetQuote();
+  };
+
+  useEffect(() => {
+    if (selectedChain) {
+      loadTokens();
+    }
+  }, [selectedChain]);
+
   return (
     <div className="w-full min-h-screen h-full relative bg-[#fafafa] flex items-center justify-center">
       <div className="bg-white p-6 rounded-3xl shadow-lg w-full max-w-2xl">
@@ -42,28 +161,20 @@ const Swap = () => {
           <div className="flex justify-between items-center">
             <input
               type="text"
-              defaultValue="1"
+              value={inputAmount}
+              onChange={(e) => handleInputChange(e.target.value)}
               className="bg-transparent text-4xl w-full outline-none text-[#FF6B6B]"
             />
-            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
-              <img src="/eth-logo.png" alt="ETH" className="w-6 h-6" />
-              <span>ETH</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
+            <CryptoSelect
+              selectedInputToken={selectedInputToken}
+              tokens={tokens}
+              setSelectedInputToken={setSelectedInputToken}
+              handleGetQuote={handleGetQuote}
+            />
           </div>
-          <div className="text-gray-500 mt-1">$2,516.85</div>
+          <div className="text-gray-500 mt-1">
+            ${quote?.outputTokens[0]?.usdValue || "0.00"}
+          </div>
           <div className="flex justify-between items-center mt-1">
             <span className="text-gray-500 flex items-center gap-1">
               <svg
@@ -79,15 +190,20 @@ const Swap = () => {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-              0 ETH
+              {userBalance} {selectedInputToken.symbol}
             </span>
-            <span className="text-gray-400">Max</span>
+            <button className="text-gray-400" onClick={handleMaxClick}>
+              Max
+            </button>
           </div>
         </div>
 
         {/* Swap arrow */}
         <div className="flex justify-center -my-2 relative z-10">
-          <button className="bg-white p-2 rounded-lg shadow-md">
+          <button
+            className="bg-white p-2 rounded-lg shadow-md"
+            onClick={handleSwapTokens}
+          >
             <svg
               className="w-5 h-5"
               fill="none"
@@ -115,34 +231,26 @@ const Swap = () => {
               defaultValue="2503.23"
               className="bg-transparent text-4xl w-full outline-none"
             />
-            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
-              <img src="/usdt-logo.png" alt="USDT" className="w-6 h-6" />
-              <span>USDT</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
+            <CryptoSelect
+              selectedInputToken={selectedInputToken}
+              tokens={tokens}
+              setSelectedInputToken={setSelectedInputToken}
+              handleGetQuote={handleGetQuote}
+            />
           </div>
           <div className="text-gray-500 mt-1">$2,503.90</div>
         </div>
 
         {/* Error message */}
-        <div className="text-center text-red-500 mt-4">Insufficient ETH</div>
+        {error && <div className="text-center text-red-500 mt-4">{error}</div>}
 
         {/* Exchange rate */}
-        <div className="mt-4 text-gray-500 text-sm">
-          1 USDT = 0.00039013 ETH ($0.999)
-        </div>
+        {quote && (
+          <div className="mt-4 text-gray-500 text-sm">
+            1 {selectedOutputToken.symbol} = {quote.exchangeRate}{" "}
+            {selectedInputToken.symbol} (${quote.usdPrice})
+          </div>
+        )}
 
         {/* Network swap banner */}
         <div className="mt-4 flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
