@@ -56,16 +56,16 @@ const Swap = () => {
     }, 1000);
   }, []);
 
-  //   useEffect(() => {
-  //     if (isAutoRefreshing) {
-  //       startAutoRefresh();
-  //     }
-  //     return () => {
-  //       if (refreshIntervalRef.current) {
-  //         clearInterval(refreshIntervalRef.current);
-  //       }
-  //     };
-  //   }, [isAutoRefreshing, startAutoRefresh]);
+  useEffect(() => {
+    if (isAutoRefreshing) {
+      startAutoRefresh();
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [isAutoRefreshing, startAutoRefresh]);
 
   const handleInputChange = async (value: string) => {
     setInputAmount(value);
@@ -256,9 +256,8 @@ const Swap = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl relative"
+        className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md relative"
       >
-        {/* Add overlay when loading */}
         {isLoading && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-50 rounded-3xl flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
@@ -269,19 +268,15 @@ const Swap = () => {
             </div>
           </div>
         )}
-
-        {/* Update header buttons to be disabled during loading */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex gap-4">
-            <motion.button
-              whileHover={{ scale: isLoading ? 1 : 1.05 }}
-              whileTap={{ scale: isLoading ? 1 : 0.95 }}
-              className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium disabled:opacity-50"
-              disabled={isLoading}
-            >
-              Swap
-            </motion.button>
-          </div>
+        {/* Simplified Header */}
+        <div className="flex items-center justify-between mb-6">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-blue-500 text-white px-4 py-1.5 rounded-full text-sm font-medium"
+          >
+            Swap
+          </motion.button>
 
           <div className="flex items-center gap-4">
             <motion.button
@@ -315,102 +310,74 @@ const Swap = () => {
         </div>
 
         {/* Swap Container */}
-        <div className="relative">
+        <div className="space-y-2">
           {/* Input Token */}
-          <div className="bg-gray-50 p-6 rounded-2xl">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500 font-medium">You Pay</span>
-              <span className="text-gray-500">
+          <div className="bg-gray-50 p-4 rounded-xl">
+            <div className="flex justify-between mb-1">
+              <span className="text-sm text-gray-500">You Pay</span>
+              <span className="text-sm text-gray-500">
                 Balance: {userBalance} {selectedInputToken?.symbol}
               </span>
             </div>
 
-            <div className="flex justify-between items-center gap-4">
+            <div className="flex justify-between items-center gap-3">
               <input
                 type="text"
                 value={inputAmount}
                 onChange={(e) => handleInputChange(e.target.value)}
-                className="bg-transparent text-4xl w-full outline-none font-medium"
+                className="bg-transparent text-2xl w-full outline-none font-medium"
                 placeholder="0.0"
-                disabled={isLoading}
               />
               <CryptoSelect
                 selectedToken={selectedInputToken}
                 tokens={tokens}
                 setSelectedToken={setSelectedInputToken}
-                disabled={isLoading}
               />
             </div>
 
-            {quote?.inValues && (
-              <div className="text-gray-500 mt-2">
-                ≈ ${Number(quote.inValues[0]).toFixed(2)}
-              </div>
-            )}
-
             {inputTokenPrice && (
-              <div className="text-gray-500 mt-2 flex items-center gap-2">
-                <span>Price: ${inputTokenPrice.toFixed(2)}</span>
-                {quote?.inValues && (
-                  <span>• Value: ${Number(quote.inValues[0]).toFixed(2)}</span>
-                )}
+              <div className="text-xs text-gray-500 mt-1">
+                ≈ ${(Number(inputAmount) * inputTokenPrice).toFixed(2)}
               </div>
             )}
           </div>
 
           {/* Swap Button */}
-          <button className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all">
-            <IconArrowsUpDown className="w-5 h-5 text-blue-500" />
-          </button>
+          <div className="flex justify-center -my-1">
+            <button
+              onClick={handleSwapTokens}
+              className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+            >
+              <IconArrowsUpDown className="w-4 h-4 text-blue-500" />
+            </button>
+          </div>
 
           {/* Output Token */}
-          <div className="bg-gray-50 p-6 rounded-2xl">
-            {/* <motion.div
-            initial={false}
-            animate={{ scale: isLoading ? 0.98 : 1 }}
-            className="bg-gray-50 p-6 rounded-2xl"
-          > */}
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500 font-medium">You Receive</span>
+          <div className="bg-gray-50 p-4 rounded-xl">
+            <div className="flex justify-between mb-1">
+              <span className="text-sm text-gray-500">You Receive</span>
             </div>
 
-            <div className="flex justify-between items-center gap-4">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={outputAmount}
-                  readOnly
-                  className="bg-transparent text-4xl w-full outline-none font-medium"
-                  placeholder="0.0"
-                />
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
-                    <IconLoader2 className="w-6 h-6 animate-spin text-blue-500" />
-                  </div>
-                )}
-              </div>
+            <div className="flex justify-between items-center gap-3">
+              <input
+                type="text"
+                value={outputAmount}
+                readOnly
+                className="bg-transparent text-2xl w-full outline-none font-medium"
+                placeholder="0.0"
+              />
               <CryptoSelect
                 selectedToken={selectedOutputToken}
                 tokens={tokens}
                 setSelectedToken={setSelectedOutputToken}
-                disabled={isLoading}
               />
             </div>
 
-            {quote?.outValues && (
-              <div className="text-gray-500 mt-2">
-                ≈ ${Number(quote.outValues[0]).toFixed(2)}
-              </div>
-            )}
             {outputTokenPrice && (
-              <div className="text-gray-500 mt-2 flex items-center gap-2">
-                <span>Price: ${outputTokenPrice.toFixed(2)}</span>
-                {quote?.outValues && (
-                  <span>• Value: ${Number(quote.outValues[0]).toFixed(2)}</span>
-                )}
+              <div className="text-xs text-gray-500 mt-1">
+                ≈ ${(Number(outputAmount) * outputTokenPrice).toFixed(2)}
               </div>
             )}
-            {/* </motion.div> */}
           </div>
         </div>
 
@@ -429,63 +396,42 @@ const Swap = () => {
         </AnimatePresence>
 
         {/* Swap Details */}
-        <AnimatePresence>
-          {quote && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-6 space-y-3 text-sm border-t pt-4"
-            >
-              <div className="flex justify-between text-gray-600">
-                <span>Exchange Rate</span>
-                <span className="font-medium">
-                  1 {selectedInputToken?.symbol} = {exchangeRate.toFixed(4)}{" "}
-                  {selectedOutputToken?.symbol}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-gray-600">
-                <span>Price Impact</span>
-                <span
-                  className={`font-medium ${
-                    Number(quote.priceImpact) > 0.05
-                      ? "text-red-500"
-                      : "text-green-500"
-                  }`}
-                >
-                  {(Number(quote.priceImpact) * 100).toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="flex justify-between text-gray-600">
-                <span>Network Fee</span>
-                <span className="font-medium">
-                  ${quote.gasEstimateValue?.toFixed(4)}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {quote && (
+          <div className="mt-4 space-y-2 text-sm border-t border-gray-100 pt-4">
+            <div className="flex justify-between text-gray-600">
+              <span>Rate</span>
+              <span>
+                1 {selectedInputToken?.symbol} = {exchangeRate.toFixed(4)}{" "}
+                {selectedOutputToken?.symbol}
+              </span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Impact</span>
+              <span
+                className={
+                  Number(quote.priceImpact) > 0.05
+                    ? "text-red-500"
+                    : "text-green-500"
+                }
+              >
+                {(Number(quote.priceImpact) * 100).toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Fee</span>
+              <span>${quote.gasEstimateValue?.toFixed(4)}</span>
+            </div>
+          </div>
+        )}
 
         {/* Swap Button */}
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full mt-6 bg-blue-500 text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isLoading || !!error}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className="w-full mt-4 bg-blue-500 text-white py-3 rounded-xl font-medium text-sm"
           onClick={handleSmartOrderRouter}
         >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <IconLoader2 className="w-5 h-5 animate-spin" />
-              Getting Best Price
-            </span>
-          ) : error ? (
-            "Try Again"
-          ) : (
-            "Swap Tokens"
-          )}
+          {isLoading ? "Getting Best Price..." : "Swap Tokens"}
         </motion.button>
       </motion.div>
     </div>
