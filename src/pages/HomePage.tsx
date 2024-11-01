@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { OdosService } from "@/lib/services/odos";
 import { TokenInfo } from "@/lib/types";
 import CryptoSelect from "@/components/CryptoSelect";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   IconLoader2,
@@ -16,11 +16,13 @@ import {
   IconGasStation,
   IconChevronDown,
   IconShieldCheck,
+  IconX,
 } from "@tabler/icons-react";
 import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 import { getPrice } from "@/lib/services/quicknode";
 import Image from "next/image";
 import { useAccount } from "wagmi";
+import Modal from "@/components/Modal";
 
 const odosService = new OdosService();
 
@@ -47,49 +49,20 @@ const HomePage = () => {
   const { address } = useAccount();
 
   // New state for multi-token swaps
-  const [isMultiSwapMode, setIsMultiSwapMode] = useState<boolean>(false);
-  const [selectedTokens, setSelectedTokens] = useState<TokenInfo[]>([]);
+  const [selectedTokens, setSelectedTokens] = useState<
+    {
+      token: TokenInfo;
+      percentage: number;
+    }[]
+  >([]);
   const [targetPercentages, setTargetPercentages] = useState<number[]>([]);
-
-  // New state for gas and MEV protection
+  const [isMultiSwapMode, setIsMultiSwapMode] = useState<boolean>(false);
   const [gasPreference, setGasPreference] = useState<"speed" | "savings">(
     "savings"
   );
   const [mevProtection, setMevProtection] = useState<boolean>(false);
-
-  // New state for cross-chain
-  const [targetChain, setTargetChain] = useState<number>(137);
-  const [isCrossChainMode, setIsCrossChainMode] = useState<boolean>(false);
-
-  // Add auto-refresh functionality
-  const startAutoRefresh = useCallback(() => {
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-    }
-
-    setRefreshCounter(10);
-    refreshIntervalRef.current = setInterval(() => {
-      setRefreshCounter((prev) => {
-        if (prev <= 0) {
-          // Changed from prev <= 1
-          handleGetQuote();
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
-
-  useEffect(() => {
-    if (isAutoRefreshing) {
-      startAutoRefresh();
-    }
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [isAutoRefreshing, startAutoRefresh]);
+  const [isSelectingToken, setIsSelectingToken] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const handleInputChange = async (value: string) => {
     setInputAmount(value);
@@ -117,88 +90,107 @@ const HomePage = () => {
   };
 
   // Get quote from Odos
-  const handleGetQuote = async (amount?: string) => {
-    if (!selectedInputToken || !selectedOutputToken) return;
+  const handleGetQuote = useCallback(
+    async (amount?: string) => {
+      if (!selectedInputToken || (!isMultiSwapMode && !selectedOutputToken))
+        return;
 
-    setIsLoading(true);
-    setError(null);
-    const amountToUse = amount || inputAmount;
-    const amountInDecimals = (
-      Number(amountToUse) * Math.pow(10, selectedInputToken.decimals)
-    ).toString();
-
-    try {
-      const payload = {
-        chainId: selectedChain,
-        compact: true,
-        gasPrice: 20,
-        inputTokens: [
-          {
-            amount: amountInDecimals,
-            tokenAddress: selectedInputToken.address,
-          },
-        ],
-        outputTokens: isMultiSwapMode
-          ? selectedTokens.map((token, index) => ({
-              proportion: targetPercentages[index] / 100,
-              tokenAddress: token.address,
-            }))
-          : [
-              {
-                proportion: 1,
-                tokenAddress: selectedOutputToken.address,
-              },
-            ],
-        referralCode: 0,
-        slippageLimitPercent: 0.3,
-        sourceBlacklist: [],
-        sourceWhitelist: [],
-        userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
-        gasOptimization:
-          gasPreference === "savings"
-            ? {
-                maxGasPrice: 100,
-                minSavings: 5,
-              }
-            : undefined,
-        mevProtection: mevProtection,
-      };
-
-      const quoteData: any = await odosService.getQuote(payload);
-      setQuote(quoteData);
-
-      // Price impact protection
-      if (Number(quoteData.priceImpact) > 0.02) {
-        setError(
-          `High price impact warning: ${(
-            Number(quoteData.priceImpact) * 100
-          ).toFixed(2)}%`
-        );
-      }
-
-      // Calculate and format the output amount
-      const rawAmount = quoteData?.outAmounts[0] || "0";
-      const formattedAmount = (
-        Number(rawAmount) / Math.pow(10, selectedOutputToken.decimals)
+      setIsLoading(true);
+      setError(null);
+      const amountToUse = amount || inputAmount;
+      const amountInDecimals = (
+        Number(amountToUse) * Math.pow(10, selectedInputToken.decimals)
       ).toString();
 
-      const exchangeRate = calculateDynamicExchangeRate(
-        quoteData.inAmounts[0],
-        quoteData.outAmounts[0],
-        quoteData.inValues[0],
-        quoteData.outValues[0],
-        selectedInputToken.decimals,
-        selectedOutputToken.decimals
-      );
-      setExchangeRate(exchangeRate);
-      setOutputAmount(formattedAmount);
-    } catch (err) {
-      setError("Failed to get quote");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        const payload = {
+          chainId: selectedChain,
+          compact: true,
+          gasPrice: gasPreference === "savings" ? 0.01125 : 0.01234,
+          inputTokens: [
+            {
+              amount: amountInDecimals,
+              tokenAddress: selectedInputToken.address,
+            },
+          ],
+          outputTokens: isMultiSwapMode
+            ? selectedTokens.map((tokenData) => ({
+                proportion: tokenData.percentage / 100,
+                tokenAddress: tokenData.token.address,
+              }))
+            : [
+                {
+                  proportion: 1,
+                  tokenAddress: selectedOutputToken.address,
+                },
+              ],
+          referralCode: 0,
+          slippageLimitPercent: 0.3,
+          sourceBlacklist: [],
+          sourceWhitelist: [],
+          userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
+          mevProtection: mevProtection,
+        };
+
+        const quoteData: any = await odosService.getQuote(payload);
+        setQuote(quoteData);
+
+        // Price impact protection
+        if (Number(quoteData.priceImpact) > 0.02) {
+          setError(
+            `High price impact warning: ${(
+              Number(quoteData.priceImpact) * 100
+            ).toFixed(2)}%`
+          );
+        }
+
+        // Calculate and format the output amount
+        if (isMultiSwapMode) {
+          // For multi-token mode, update each token's estimated output
+          const outputs = quoteData.outAmounts.map(
+            (amount: string, index: number) => {
+              const token = selectedTokens[index].token;
+              return Number(amount) / Math.pow(10, token.decimals);
+            }
+          );
+          setOutputAmount(outputs.reduce((a, b) => a + b, 0).toString());
+        } else {
+          // For single token mode
+          const rawAmount = quoteData?.outAmounts[0] || "0";
+          const formattedAmount = (
+            Number(rawAmount) / Math.pow(10, selectedOutputToken.decimals)
+          ).toString();
+          setOutputAmount(formattedAmount);
+
+          const exchangeRate = calculateDynamicExchangeRate(
+            quoteData.inAmounts[0],
+            quoteData.outAmounts[0],
+            quoteData.inValues[0],
+            quoteData.outValues[0],
+            selectedInputToken.decimals,
+            selectedOutputToken.decimals
+          );
+          setExchangeRate(exchangeRate);
+        }
+      } catch (err) {
+        setError("Failed to get quote");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      selectedInputToken,
+      selectedOutputToken,
+      inputAmount,
+      selectedChain,
+      gasPreference,
+      address,
+      mevProtection,
+      isMultiSwapMode,
+      selectedTokens,
+    ]
+  );
 
   // Handle max button click
   const handleMaxClick = () => {
@@ -213,6 +205,35 @@ const HomePage = () => {
     setSelectedOutputToken(tempToken);
     handleGetQuote();
   };
+
+  // Add auto-refresh functionality
+  const startAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    setRefreshCounter(10);
+    refreshIntervalRef.current = setInterval(() => {
+      setRefreshCounter((prev) => {
+        if (prev <= 1) {
+          handleGetQuote();
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [handleGetQuote]);
+
+  useEffect(() => {
+    if (isAutoRefreshing) {
+      startAutoRefresh();
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [isAutoRefreshing, startAutoRefresh]);
 
   useEffect(() => {
     const init = async () => {
@@ -272,12 +293,6 @@ const HomePage = () => {
       pathId: quote.pathId,
       simulate: true,
       mevProtection,
-      crossChain: isCrossChainMode
-        ? {
-            targetChain,
-            bridgeData: quote.bridgeData,
-          }
-        : undefined,
     };
 
     odosService
@@ -313,49 +328,81 @@ const HomePage = () => {
     fetchTokenPrices();
   }, [selectedInputToken?.address, selectedOutputToken?.address]);
 
-  const handleCrossChainSwap = async () => {
-    if (!selectedInputToken || !selectedOutputToken) return;
+  // if (isLoading) return <div>Loading...</div>;
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // First get quote for source chain
-      const sourceQuote = await handleGetQuote();
-
-      // Then prepare cross-chain payload
-      const crossChainPayload = {
-        sourceChain: selectedChain,
-        targetChain: targetChain,
-        inputTokens: [
-          {
-            amount: quote.inAmounts[0],
-            tokenAddress: selectedInputToken.address,
-          },
-        ],
-        outputTokens: [
-          {
-            proportion: 1,
-            tokenAddress: selectedOutputToken.address,
-          },
-        ],
-        userAddr: address,
-      };
-
-      // Get cross-chain quote
-      const crossChainQuote = await odosService.getCrossChainQuote(
-        crossChainPayload
-      );
-      setQuote(crossChainQuote);
-    } catch (err) {
-      setError("Failed to get cross-chain quote");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  // Add helper functions for token management
+  const addTokenToSplit = (token: TokenInfo) => {
+    if (selectedTokens.length >= 4) {
+      setError("Maximum 4 tokens allowed for split");
+      return;
     }
+
+    const remainingPercentage =
+      100 - selectedTokens.reduce((sum, t) => sum + t.percentage, 0);
+    setSelectedTokens([
+      ...selectedTokens,
+      { token, percentage: remainingPercentage },
+    ]);
   };
 
-  // if (isLoading) return <div>Loading...</div>;
+  const removeTokenFromSplit = (index: number) => {
+    const newTokens = selectedTokens.filter((_, i) => i !== index);
+    // Redistribute percentages
+    const totalPercentage = newTokens.reduce((sum, t) => sum + t.percentage, 0);
+    if (totalPercentage < 100 && newTokens.length > 0) {
+      const distribution = (100 - totalPercentage) / newTokens.length;
+      newTokens.forEach((t) => (t.percentage += distribution));
+    }
+    setSelectedTokens(newTokens);
+  };
+
+  const updateTokenPercentage = (index: number, percentage: number) => {
+    const newTokens = [...selectedTokens];
+    const oldPercentage = newTokens[index].percentage;
+    const difference = percentage - oldPercentage;
+
+    // Adjust other tokens' percentages proportionally
+    const remainingTokens = newTokens.filter((_, i) => i !== index);
+    const totalRemainingPercentage = remainingTokens.reduce(
+      (sum, t) => sum + t.percentage,
+      0
+    );
+
+    remainingTokens.forEach((token) => {
+      token.percentage -=
+        difference * (token.percentage / totalRemainingPercentage);
+    });
+
+    newTokens[index].percentage = percentage;
+    setSelectedTokens(newTokens);
+  };
+
+  const AutoRefreshToggle = () => (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+          isAutoRefreshing
+            ? "bg-[#0aa6ec] text-white"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <IconRefresh
+          className={`w-4 h-4 ${isAutoRefreshing ? "animate-spin" : ""}`}
+        />
+        {isAutoRefreshing ? refreshCounter : "Auto Refresh"}
+      </button>
+    </div>
+  );
+
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="w-full h-full relative flex items-center justify-center p-4">
@@ -386,24 +433,7 @@ const HomePage = () => {
             </motion.button>
 
             <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: isLoading ? 1 : 1.05 }}
-                whileTap={{ scale: isLoading ? 1 : 0.95 }}
-                onClick={() =>
-                  !isLoading && setIsAutoRefreshing(!isAutoRefreshing)
-                }
-                className={`flex items-center gap-2 text-gray-500 hover:text-gray-700 ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={isLoading}
-              >
-                <IconRefresh
-                  className={`w-4 h-4 ${
-                    isAutoRefreshing ? "animate-spin" : ""
-                  }`}
-                />
-                <span className="text-sm">{refreshCounter}s</span>
-              </motion.button>
+              <AutoRefreshToggle />
 
               <motion.button
                 whileHover={{ scale: isLoading ? 1 : 1.05 }}
@@ -547,20 +577,7 @@ const HomePage = () => {
               >
                 <div className="flex items-center justify-center gap-2">
                   <IconLayoutGrid className="w-4 h-4" />
-                  <span>Multi-Swap</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setIsCrossChainMode(!isCrossChainMode)}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isCrossChainMode
-                    ? "bg-[#0aa6ec] text-white shadow-sm"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <IconArrowsExchange className="w-4 h-4" />
-                  <span>Cross-Chain</span>
+                  <span>Multi-Token Split</span>
                 </div>
               </button>
             </div>
@@ -578,9 +595,14 @@ const HomePage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <IconGasStation className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
-                      Gas Preference
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">
+                        Gas Preference
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Optimize for speed or cost savings
+                      </span>
+                    </div>
                   </div>
                   <div className="relative">
                     <select
@@ -606,7 +628,7 @@ const HomePage = () => {
                         MEV Protection
                       </span>
                       <span className="text-xs text-gray-500">
-                        Protect against front-running
+                        Protect against front-running attacks
                       </span>
                     </div>
                   </div>
@@ -622,38 +644,199 @@ const HomePage = () => {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Conditional Cross-Chain UI */}
-          {isCrossChainMode && (
-            <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-              <span className="text-sm font-medium">Target Chain</span>
-              <select
-                value={targetChain}
-                onChange={(e) => setTargetChain(Number(e.target.value))}
-                className="w-full mt-1 bg-white rounded-lg px-2 py-1"
-              >
-                <option value="137">Polygon</option>
-                <option value="1">Ethereum</option>
-                {/* Add other supported chains */}
-              </select>
-            </div>
-          )}
+            {/* Multi-Token Split UI */}
+            {isMultiSwapMode && (
+              <div className="bg-gray-50 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-gray-100/50 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Token Split
+                  </span>
+                  {selectedTokens.length < 4 && (
+                    <button
+                      onClick={() => setIsSelectingToken(true)}
+                      className="text-xs text-[#0aa6ec] hover:text-[#0aa6ec]/80 font-medium"
+                    >
+                      + Add Token
+                    </button>
+                  )}
+                </div>
+
+                <div className="p-4 space-y-3">
+                  {selectedTokens.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500 text-sm">
+                      Add tokens to create a split swap
+                    </div>
+                  ) : (
+                    selectedTokens.map((tokenData, index) => (
+                      <div
+                        key={tokenData.token.address}
+                        className="bg-white rounded-lg p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src={
+                                tokenData.token.logoURI || "/default-token.png"
+                              }
+                              alt={tokenData.token.symbol}
+                              width={24}
+                              height={24}
+                              className="rounded-full"
+                            />
+                            <span className="font-medium text-sm">
+                              {tokenData.token.symbol}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => removeTokenFromSplit(index)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <IconX className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <input
+                              type="range"
+                              value={tokenData.percentage}
+                              onChange={(e) =>
+                                updateTokenPercentage(
+                                  index,
+                                  Number(e.target.value)
+                                )
+                              }
+                              min="1"
+                              max={
+                                100 -
+                                selectedTokens.reduce(
+                                  (sum, t, i) =>
+                                    i !== index ? sum + t.percentage : sum,
+                                  0
+                                )
+                              }
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0aa6ec]"
+                            />
+                          </div>
+                          <div className="w-16">
+                            <input
+                              type="number"
+                              value={tokenData.percentage.toFixed(0)}
+                              onChange={(e) => {
+                                const value = Math.min(
+                                  100,
+                                  Math.max(1, Number(e.target.value))
+                                );
+                                updateTokenPercentage(index, value);
+                              }}
+                              className="w-full px-2 py-1 text-sm text-right border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0aa6ec]/20"
+                            />
+                          </div>
+                          <span className="text-sm text-gray-500">%</span>
+                        </div>
+
+                        {/* Estimated Output */}
+                        <div className="text-sm text-gray-500">
+                          ≈{" "}
+                          {(
+                            (Number(outputAmount) * tokenData.percentage) /
+                            100
+                          ).toFixed(4)}{" "}
+                          {tokenData.token.symbol}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {selectedTokens.length > 0 && (
+                    <div className="pt-2 border-t border-gray-200">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Total Percentage:</span>
+                        <span
+                          className={`font-medium ${
+                            Math.abs(
+                              selectedTokens.reduce(
+                                (sum, t) => sum + t.percentage,
+                                0
+                              ) - 100
+                            ) < 0.01
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {selectedTokens
+                            .reduce((sum, t) => sum + t.percentage, 0)
+                            .toFixed(0)}
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Token Selection Modal */}
+            {isSelectingToken && (
+              <Modal onClose={() => setIsSelectingToken(false)}>
+                <div className="p-4">
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Search tokens..."
+                      className="w-full px-3 py-2 border rounded-lg"
+                      onChange={(e) => {
+                        /* Implement token search */
+                      }}
+                    />
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {tokens
+                      .filter(
+                        (token) =>
+                          !selectedTokens.some(
+                            (t) => t.token.address === token.address
+                          )
+                      )
+                      .map((token) => (
+                        <button
+                          key={token.address}
+                          onClick={() => {
+                            addTokenToSplit(token);
+                            setIsSelectingToken(false);
+                          }}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg"
+                        >
+                          <Image
+                            src={token.logoURI || "/default-token.png"}
+                            alt={token.symbol}
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{token.symbol}</span>
+                            <span className="text-sm text-gray-500">
+                              {token.name}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </Modal>
+            )}
+          </div>
 
           {/* Swap Button */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             className="w-full mt-4 bg-[#0aa6ec] text-white py-3 rounded-xl font-medium text-sm"
-            onClick={
-              isCrossChainMode ? handleCrossChainSwap : handleSmartOrderRouter
-            }
+            onClick={handleSmartOrderRouter}
           >
-            {isLoading
-              ? "Getting Best Price..."
-              : isCrossChainMode
-              ? "Cross-Chain Swap"
-              : "Swap Tokens"}
+            {isLoading ? "Getting Best Price..." : "Swap Tokens"}
           </motion.button>
         </motion.div>
 
