@@ -11,6 +11,11 @@ import {
   IconRefresh,
   IconSettings,
   IconArrowsUpDown,
+  IconLayoutGrid,
+  IconArrowsExchange,
+  IconGasStation,
+  IconChevronDown,
+  IconShieldCheck,
 } from "@tabler/icons-react";
 import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 import { getPrice } from "@/lib/services/quicknode";
@@ -40,6 +45,21 @@ const HomePage = () => {
   const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
   const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);
   const { address } = useAccount();
+
+  // New state for multi-token swaps
+  const [isMultiSwapMode, setIsMultiSwapMode] = useState<boolean>(false);
+  const [selectedTokens, setSelectedTokens] = useState<TokenInfo[]>([]);
+  const [targetPercentages, setTargetPercentages] = useState<number[]>([]);
+
+  // New state for gas and MEV protection
+  const [gasPreference, setGasPreference] = useState<"speed" | "savings">(
+    "savings"
+  );
+  const [mevProtection, setMevProtection] = useState<boolean>(false);
+
+  // New state for cross-chain
+  const [targetChain, setTargetChain] = useState<number>(137);
+  const [isCrossChainMode, setIsCrossChainMode] = useState<boolean>(false);
 
   // Add auto-refresh functionality
   const startAutoRefresh = useCallback(() => {
@@ -118,21 +138,43 @@ const HomePage = () => {
             tokenAddress: selectedInputToken.address,
           },
         ],
-        outputTokens: [
-          {
-            proportion: 1,
-            tokenAddress: selectedOutputToken.address,
-          },
-        ],
+        outputTokens: isMultiSwapMode
+          ? selectedTokens.map((token, index) => ({
+              proportion: targetPercentages[index] / 100,
+              tokenAddress: token.address,
+            }))
+          : [
+              {
+                proportion: 1,
+                tokenAddress: selectedOutputToken.address,
+              },
+            ],
         referralCode: 0,
         slippageLimitPercent: 0.3,
         sourceBlacklist: [],
         sourceWhitelist: [],
-        userAddr: "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89", // Add user address here
+        userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
+        gasOptimization:
+          gasPreference === "savings"
+            ? {
+                maxGasPrice: 100,
+                minSavings: 5,
+              }
+            : undefined,
+        mevProtection: mevProtection,
       };
-      console.log(payload, "payload");
+
       const quoteData: any = await odosService.getQuote(payload);
       setQuote(quoteData);
+
+      // Price impact protection
+      if (Number(quoteData.priceImpact) > 0.02) {
+        setError(
+          `High price impact warning: ${(
+            Number(quoteData.priceImpact) * 100
+          ).toFixed(2)}%`
+        );
+      }
 
       // Calculate and format the output amount
       const rawAmount = quoteData?.outAmounts[0] || "0";
@@ -221,17 +263,35 @@ const HomePage = () => {
   }
 
   function handleSmartOrderRouter() {
-    console.log("handleSmartOrderRouter");
+    if (!address || !quote) return;
 
-    // assembleTransaction
+    setIsLoading(true);
+
     const assembleRequestBody = {
       userAddr: address,
       pathId: quote.pathId,
       simulate: true,
+      mevProtection,
+      crossChain: isCrossChainMode
+        ? {
+            targetChain,
+            bridgeData: quote.bridgeData,
+          }
+        : undefined,
     };
-    odosService.assembleTransaction(assembleRequestBody).then((res) => {
-      sendEthereumTransaction(res.data.transaction);
-    });
+
+    odosService
+      .assembleTransaction(assembleRequestBody)
+      .then((res) => {
+        sendEthereumTransaction(res.data.transaction);
+      })
+      .catch((err) => {
+        setError("Failed to assemble transaction");
+        console.error(err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
 
   const fetchTokenPrices = async () => {
@@ -252,6 +312,48 @@ const HomePage = () => {
   useEffect(() => {
     fetchTokenPrices();
   }, [selectedInputToken?.address, selectedOutputToken?.address]);
+
+  const handleCrossChainSwap = async () => {
+    if (!selectedInputToken || !selectedOutputToken) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // First get quote for source chain
+      const sourceQuote = await handleGetQuote();
+
+      // Then prepare cross-chain payload
+      const crossChainPayload = {
+        sourceChain: selectedChain,
+        targetChain: targetChain,
+        inputTokens: [
+          {
+            amount: quote.inAmounts[0],
+            tokenAddress: selectedInputToken.address,
+          },
+        ],
+        outputTokens: [
+          {
+            proportion: 1,
+            tokenAddress: selectedOutputToken.address,
+          },
+        ],
+        userAddr: address,
+      };
+
+      // Get cross-chain quote
+      const crossChainQuote = await odosService.getCrossChainQuote(
+        crossChainPayload
+      );
+      setQuote(crossChainQuote);
+    } catch (err) {
+      setError("Failed to get cross-chain quote");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // if (isLoading) return <div>Loading...</div>;
 
@@ -431,14 +533,127 @@ const HomePage = () => {
             </div>
           )}
 
+          {/* Mode Selection and Settings Panel */}
+          <div className="space-y-4 mt-4 mb-6">
+            {/* Mode Toggles */}
+            <div className="flex gap-2 p-1 bg-gray-50 rounded-lg">
+              <button
+                onClick={() => setIsMultiSwapMode(!isMultiSwapMode)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isMultiSwapMode
+                    ? "bg-[#0aa6ec] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <IconLayoutGrid className="w-4 h-4" />
+                  <span>Multi-Swap</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setIsCrossChainMode(!isCrossChainMode)}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isCrossChainMode
+                    ? "bg-[#0aa6ec] text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <IconArrowsExchange className="w-4 h-4" />
+                  <span>Cross-Chain</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Settings Panel */}
+            <div className="bg-gray-50 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-gray-100/50">
+                <span className="text-sm font-semibold text-gray-700">
+                  Advanced Settings
+                </span>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {/* Gas Preference */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <IconGasStation className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">
+                      Gas Preference
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={gasPreference}
+                      onChange={(e) =>
+                        setGasPreference(e.target.value as "speed" | "savings")
+                      }
+                      className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0aa6ec]/20 focus:border-[#0aa6ec] transition-all"
+                    >
+                      <option value="speed">Speed</option>
+                      <option value="savings">Savings</option>
+                    </select>
+                    <IconChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* MEV Protection */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <IconShieldCheck className="w-4 h-4 text-gray-500" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">
+                        MEV Protection
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Protect against front-running
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={mevProtection}
+                      onChange={(e) => setMevProtection(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0aa6ec]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0aa6ec]"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Conditional Cross-Chain UI */}
+          {isCrossChainMode && (
+            <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+              <span className="text-sm font-medium">Target Chain</span>
+              <select
+                value={targetChain}
+                onChange={(e) => setTargetChain(Number(e.target.value))}
+                className="w-full mt-1 bg-white rounded-lg px-2 py-1"
+              >
+                <option value="137">Polygon</option>
+                <option value="1">Ethereum</option>
+                {/* Add other supported chains */}
+              </select>
+            </div>
+          )}
+
           {/* Swap Button */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             className="w-full mt-4 bg-[#0aa6ec] text-white py-3 rounded-xl font-medium text-sm"
-            onClick={handleSmartOrderRouter}
+            onClick={
+              isCrossChainMode ? handleCrossChainSwap : handleSmartOrderRouter
+            }
           >
-            {isLoading ? "Getting Best Price..." : "Swap Tokens"}
+            {isLoading
+              ? "Getting Best Price..."
+              : isCrossChainMode
+              ? "Cross-Chain Swap"
+              : "Swap Tokens"}
           </motion.button>
         </motion.div>
 

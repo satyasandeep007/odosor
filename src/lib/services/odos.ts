@@ -206,4 +206,9 @@ export class OdosService {
       throw this.handleError("Failed to assemble transaction", error);
     }
   }
+
+  async getCrossChainQuote(payload: any) {
+    const response = await this.api.post("/sor/quote/crosschain", payload);
+    return response.data;
+  }
 }
