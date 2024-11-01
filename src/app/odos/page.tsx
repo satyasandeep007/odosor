@@ -150,11 +150,10 @@ export default function OdosPage() {
                 Select Chain
               </label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 value={selectedChain}
                 onChange={(e) => setSelectedChain(Number(e.target.value))}
               >
-                <option value="">Select a chain</option>
                 {chains.map((chain) => (
                   <option key={chain} value={chain}>
                     {chain}
@@ -163,7 +162,7 @@ export default function OdosPage() {
               </select>
             </div>
 
-            {/* Token Selection Fields */}
+            {/* Swap Interface */}
             <div className="space-y-4">
               {/* Input Token */}
               <div className="p-4 bg-gray-50 rounded-lg">
@@ -193,7 +192,102 @@ export default function OdosPage() {
                 </div>
               </div>
 
-              {/* ... rest of the component remains the same ... */}
+              {/* Swap Arrow */}
+              <div className="flex justify-center">
+                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
+                  ↓
+                </button>
+              </div>
+
+              {/* Output Token */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  You Receive
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    className="flex-1 p-2 border border-gray-300 rounded-md"
+                    placeholder="0.0"
+                    disabled
+                    value={quote?.outputAmount || ""}
+                  />
+                  <select
+                    className="w-1/3 p-2 border border-gray-300 rounded-md"
+                    value={selectedOutputToken}
+                    onChange={(e) => setSelectedOutputToken(e.target.value)}
+                  >
+                    <option value="">Select token</option>
+                    {tokens.map((token) => (
+                      <option key={token.address} value={token.address}>
+                        {token.symbol}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Swap Button */}
+              <button
+                className={`w-full py-3 px-4 rounded-lg text-white font-medium
+            ${
+              isLoading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+                onClick={handleGetQuote}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin h-5 w-5 mr-3"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Getting Quote...
+                  </span>
+                ) : (
+                  "Get Quote"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Quote Details */}
+        {quote && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Quote Details
+            </h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex justify-between">
+                <span>Estimated Gas:</span>
+                <span>{quote.estimatedGas}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Price Impact:</span>
+                <span>{quote.priceImpact}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Minimum Received:</span>
+                <span>{quote.minReceived}</span>
+              </div>
             </div>
           </div>
         )}
