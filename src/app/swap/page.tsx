@@ -3,90 +3,180 @@ import React from "react";
 const Swap = () => {
   return (
     <div className="w-full min-h-screen h-full relative bg-[#fafafa] flex items-center justify-center">
-      <div className="bg-white p-4 rounded-3xl shadow-lg w-full max-w-2xl">
-        {/* Tab buttons */}
-        <div className="flex gap-4 mb-6">
-          <button className="font-semibold text-black">Buy</button>
-          <div className="ml-auto flex items-center gap-2 text-sm text-gray-600">
-            <span>0.30% slippage</span>
-            <button className="text-gray-600">
+      <div className="bg-white p-6 rounded-3xl shadow-lg w-full max-w-2xl">
+        {/* Navigation tabs */}
+        <div className="flex gap-6 mb-8">
+          <button className="bg-gray-100 px-4 py-2 rounded-full font-medium">
+            Swap
+          </button>
+
+          <button className="ml-auto">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* First input section */}
+        <div className="bg-gray-50 p-4 rounded-2xl mb-2">
+          <div className="flex justify-between mb-1">
+            <span className="text-gray-500">Sell</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <input
+              type="text"
+              defaultValue="1"
+              className="bg-transparent text-4xl w-full outline-none text-[#FF6B6B]"
+            />
+            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+              <img src="/eth-logo.png" alt="ETH" className="w-6 h-6" />
+              <span>ETH</span>
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
                 <path
-                  fillRule="evenodd"
-                  d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                  clipRule="evenodd"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
                 />
               </svg>
             </button>
           </div>
-        </div>
-
-        {/* Input fields */}
-        <div className="space-y-2">
-          <div className="bg-[#f7f7f7] p-4 rounded-2xl">
-            <input
-              type="text"
-              defaultValue="100"
-              className="bg-transparent text-4xl w-full outline-none"
-            />
-            <div className="flex items-center mt-2">
-              <button className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm">
-                <img src="/us-flag.png" alt="USD" className="w-5 h-5" />
-                <span>USDC</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-[#f7f7f7] p-4 rounded-2xl">
-            <input
-              type="text"
-              defaultValue="0.12342"
-              className="bg-transparent text-4xl w-full outline-none"
-            />
-            <div className="flex items-center mt-2">
-              <button className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm">
-                <img src="/eth-logo.png" alt="ETH" className="w-5 h-5" />
-                <span>ETH</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            </div>
+          <div className="text-gray-500 mt-1">$2,516.85</div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-gray-500 flex items-center gap-1">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              0 ETH
+            </span>
+            <span className="text-gray-400">Max</span>
           </div>
         </div>
 
-        {/* Buy button */}
-        <button className="w-full bg-[#6366F1] text-white py-4 rounded-xl mt-6 font-medium">
-          Buy Now
-        </button>
+        {/* Swap arrow */}
+        <div className="flex justify-center -my-2 relative z-10">
+          <button className="bg-white p-2 rounded-lg shadow-md">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Second input section */}
+        <div className="bg-gray-50 p-4 rounded-2xl">
+          <div className="flex justify-between mb-1">
+            <span className="text-gray-500">Buy</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <input
+              type="text"
+              defaultValue="2503.23"
+              className="bg-transparent text-4xl w-full outline-none"
+            />
+            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+              <img src="/usdt-logo.png" alt="USDT" className="w-6 h-6" />
+              <span>USDT</span>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+          </div>
+          <div className="text-gray-500 mt-1">$2,503.90</div>
+        </div>
+
+        {/* Error message */}
+        <div className="text-center text-red-500 mt-4">Insufficient ETH</div>
+
+        {/* Exchange rate */}
+        <div className="mt-4 text-gray-500 text-sm">
+          1 USDT = 0.00039013 ETH ($0.999)
+        </div>
+
+        {/* Network swap banner */}
+        <div className="mt-4 flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
+          <div className="flex gap-1">
+            <img src="/eth-logo.png" alt="" className="w-6 h-6" />
+            <img src="/polygon-logo.png" alt="" className="w-6 h-6 -ml-2" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Swapping across networks</span>
+              <span className="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full">
+                New
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              Move ETH, USDC, and more across 8+ networks.
+            </div>
+          </div>
+          <button className="ml-auto">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
