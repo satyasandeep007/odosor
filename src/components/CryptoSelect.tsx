@@ -37,13 +37,14 @@ const CryptoSelect = ({
         onClick={() => setIsOpen(!isOpen)}
       >
         <Image
-          src={`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${selectedToken.symbol.toLowerCase()}.png`}
-          alt={selectedToken.symbol}
+          // src={`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${selectedToken.symbol.toLowerCase()}.png`}
+          src={`https://assets.odos.xyz/tokens/${selectedToken?.symbol}.webp`}
+          alt={selectedToken?.symbol}
           className="w-6 h-6"
           width={24}
           height={24}
         />
-        <span className="font-medium">{selectedToken.symbol}</span>
+        <span className="font-medium">{selectedToken?.symbol}</span>
         <svg
           className={`w-4 h-4 text-gray-600 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -69,7 +70,7 @@ const CryptoSelect = ({
               <button
                 key={token.address}
                 className={`w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-gray-100 ${
-                  selectedToken.address === token.address ? "bg-gray-50" : ""
+                  selectedToken?.address === token.address ? "bg-gray-50" : ""
                 }`}
                 onClick={() => {
                   setSelectedToken(token);
@@ -77,7 +78,7 @@ const CryptoSelect = ({
                 }}
               >
                 <Image
-                  src={`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${token.symbol.toLowerCase()}.png`}
+                  src={`https://assets.odos.xyz/tokens/${token.symbol}.webp`}
                   alt={token.symbol}
                   className="w-6 h-6"
                   width={24}

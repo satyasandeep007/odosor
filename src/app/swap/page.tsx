@@ -13,32 +13,30 @@ import {
   IconArrowsUpDown,
 } from "@tabler/icons-react";
 import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
+import { getPrice } from "@/lib/services/quicknode";
+
 const odosService = new OdosService();
 
 const Swap = () => {
   const [inputAmount, setInputAmount] = useState<string>("1");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
-  const [selectedInputToken, setSelectedInputToken] = useState<TokenInfo>({
-    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // ETH
-    symbol: "UNI",
-    decimals: 18,
-  });
-  const [selectedOutputToken, setSelectedOutputToken] = useState<TokenInfo>({
-    address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
-    symbol: "USDT",
-    decimals: 6,
-  });
+  const [selectedInputToken, setSelectedInputToken]: any =
+    useState<TokenInfo>();
+  const [selectedOutputToken, setSelectedOutputToken]: any =
+    useState<TokenInfo>();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [quote, setQuote] = useState<any>(null);
   const [userBalance, setUserBalance] = useState<string>("0");
   const [exchangeRate, setExchangeRate] = useState<number>(0);
-  const [selectedChain, setSelectedChain] = useState<number>(1); // Ethereum mainnet
+  const [selectedChain, setSelectedChain] = useState<number>(137); // Polygon mainnet
   const [tokens, setTokens] = useState<any[]>([]);
   const [refreshCounter, setRefreshCounter] = useState<number>(10);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(true);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
+  const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);
 
   // Add auto-refresh functionality
   const startAutoRefresh = useCallback(() => {
@@ -82,6 +80,10 @@ const Swap = () => {
       const tokensData = await odosService.getChainTokens(selectedChain);
       console.log(tokensData, "tokensData");
       setTokens(Array.isArray(tokensData) ? tokensData : []);
+      setSelectedInputToken(tokensData.find((token) => token.symbol === "UNI"));
+      setSelectedOutputToken(
+        tokensData.find((token) => token.symbol === "USDT")
+      );
     } catch (err) {
       setError("Failed to load tokens");
       setTokens([]);
@@ -167,9 +169,13 @@ const Swap = () => {
   };
 
   useEffect(() => {
-    if (selectedChain) {
-      loadTokens();
-    }
+    const init = async () => {
+      if (selectedChain) {
+        await loadTokens();
+      }
+    };
+
+    init();
   }, [selectedChain]);
 
   useEffect(() => {
@@ -224,6 +230,27 @@ const Swap = () => {
     });
   }
 
+  const fetchTokenPrices = async () => {
+    try {
+      if (!selectedInputToken || !selectedOutputToken) return;
+      const [inputPrice, outputPrice] = await Promise.all([
+        getPrice(selectedInputToken.address),
+        getPrice(selectedOutputToken.address),
+      ]);
+      setInputTokenPrice(inputPrice);
+      setOutputTokenPrice(outputPrice);
+    } catch (error) {
+      console.error("Failed to fetch token prices:", error);
+    }
+  };
+
+  // Add this useEffect
+  useEffect(() => {
+    fetchTokenPrices();
+  }, [selectedInputToken?.address, selectedOutputToken?.address]);
+
+  // if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="w-full min-h-screen h-full relative bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <motion.div
@@ -277,7 +304,7 @@ const Swap = () => {
             <div className="flex justify-between mb-2">
               <span className="text-gray-500 font-medium">You Pay</span>
               <span className="text-gray-500">
-                Balance: {userBalance} {selectedInputToken.symbol}
+                Balance: {userBalance} {selectedInputToken?.symbol}
               </span>
             </div>
 
@@ -301,6 +328,15 @@ const Swap = () => {
             {quote?.inValues && (
               <div className="text-gray-500 mt-2">
                 ≈ ${Number(quote.inValues[0]).toFixed(2)}
+              </div>
+            )}
+
+            {inputTokenPrice && (
+              <div className="text-gray-500 mt-2 flex items-center gap-2">
+                <span>Price: ${inputTokenPrice.toFixed(2)}</span>
+                {quote?.inValues && (
+                  <span>• Value: ${Number(quote.inValues[0]).toFixed(2)}</span>
+                )}
               </div>
             )}
           </motion.div>
@@ -354,6 +390,14 @@ const Swap = () => {
                 ≈ ${Number(quote.outValues[0]).toFixed(2)}
               </div>
             )}
+            {outputTokenPrice && (
+              <div className="text-gray-500 mt-2 flex items-center gap-2">
+                <span>Price: ${outputTokenPrice.toFixed(2)}</span>
+                {quote?.outValues && (
+                  <span>• Value: ${Number(quote.outValues[0]).toFixed(2)}</span>
+                )}
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -383,8 +427,8 @@ const Swap = () => {
               <div className="flex justify-between text-gray-600">
                 <span>Exchange Rate</span>
                 <span className="font-medium">
-                  1 {selectedInputToken.symbol} = {exchangeRate.toFixed(4)}{" "}
-                  {selectedOutputToken.symbol}
+                  1 {selectedInputToken?.symbol} = {exchangeRate.toFixed(4)}{" "}
+                  {selectedOutputToken?.symbol}
                 </span>
               </div>
 

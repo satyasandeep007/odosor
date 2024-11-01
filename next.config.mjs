@@ -6,6 +6,7 @@ const nextConfig = {
       "assets.aceternity.com",
       "ui.aceternity.com",
       "raw.githubusercontent.com",
+      "assets.odos.xyz",
     ],
   },
   webpack: (config) => {
