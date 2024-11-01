@@ -256,15 +256,28 @@ const Swap = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl"
+        className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl relative"
       >
-        {/* Header */}
+        {/* Add overlay when loading */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-50 rounded-3xl flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <IconLoader2 className="w-8 h-8 animate-spin text-blue-500" />
+              <span className="text-gray-600 font-medium">
+                Getting Best Price...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Update header buttons to be disabled during loading */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex gap-4">
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium"
+              whileHover={{ scale: isLoading ? 1 : 1.05 }}
+              whileTap={{ scale: isLoading ? 1 : 0.95 }}
+              className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium disabled:opacity-50"
+              disabled={isLoading}
             >
               Swap
             </motion.button>
@@ -272,10 +285,15 @@ const Swap = () => {
 
           <div className="flex items-center gap-4">
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+              whileHover={{ scale: isLoading ? 1 : 1.05 }}
+              whileTap={{ scale: isLoading ? 1 : 0.95 }}
+              onClick={() =>
+                !isLoading && setIsAutoRefreshing(!isAutoRefreshing)
+              }
+              className={`flex items-center gap-2 text-gray-500 hover:text-gray-700 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
             >
               <IconRefresh
                 className={`w-4 h-4 ${isAutoRefreshing ? "animate-spin" : ""}`}
@@ -284,9 +302,12 @@ const Swap = () => {
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-full hover:bg-gray-100"
+              whileHover={{ scale: isLoading ? 1 : 1.05 }}
+              whileTap={{ scale: isLoading ? 1 : 0.95 }}
+              className={`p-2 rounded-full hover:bg-gray-100 ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
             >
               <IconSettings className="w-5 h-5 text-gray-600" />
             </motion.button>
