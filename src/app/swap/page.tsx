@@ -317,11 +317,7 @@ const Swap = () => {
         {/* Swap Container */}
         <div className="relative">
           {/* Input Token */}
-          <motion.div
-            initial={false}
-            animate={{ scale: isLoading ? 0.98 : 1 }}
-            className="bg-gray-50 p-6 rounded-2xl mb-2 transition-all"
-          >
+          <div className="bg-gray-50 p-6 rounded-2xl">
             <div className="flex justify-between mb-2">
               <span className="text-gray-500 font-medium">You Pay</span>
               <span className="text-gray-500">
@@ -360,25 +356,20 @@ const Swap = () => {
                 )}
               </div>
             )}
-          </motion.div>
+          </div>
 
           {/* Swap Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSwapTokens}
-            disabled={isLoading}
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
-          >
+          <button className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all">
             <IconArrowsUpDown className="w-5 h-5 text-blue-500" />
-          </motion.button>
+          </button>
 
           {/* Output Token */}
-          <motion.div
+          <div className="bg-gray-50 p-6 rounded-2xl">
+            {/* <motion.div
             initial={false}
             animate={{ scale: isLoading ? 0.98 : 1 }}
             className="bg-gray-50 p-6 rounded-2xl"
-          >
+          > */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-500 font-medium">You Receive</span>
             </div>
@@ -419,7 +410,8 @@ const Swap = () => {
                 )}
               </div>
             )}
-          </motion.div>
+            {/* </motion.div> */}
+          </div>
         </div>
 
         {/* Error message */}
