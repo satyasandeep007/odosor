@@ -7,45 +7,17 @@ import CryptoSelect from "@/components/CryptoSelect";
 
 const odosService = new OdosService();
 
-const getTokenLogo = (symbol: string, address: string) => {
-  const sources = [
-    // Try cryptocurrency-icons first
-    `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase()}.png`,
-    // Fallback to TrustWallet assets
-    `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`,
-    // Default fallback image
-    "/default-token-logo.png",
-  ];
-
-  // Function to check if image exists
-  const checkImage = (url: string) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(url);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  };
-
-  // Return the first working image URL
-  return Promise.any(sources.map(checkImage)).then(
-    (url) => url || sources[sources.length - 1]
-  );
-};
-
 const Swap = () => {
   const [inputAmount, setInputAmount] = useState<string>("1");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
   const [selectedInputToken, setSelectedInputToken] = useState<TokenInfo>({
     address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // ETH
     symbol: "UNI",
-    logo: "/uni-logo.png",
     decimals: 18,
   });
   const [selectedOutputToken, setSelectedOutputToken] = useState<TokenInfo>({
     address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
     symbol: "USDT",
-    logo: "/usdt-logo.png",
     decimals: 6,
   });
 
@@ -274,6 +246,7 @@ const Swap = () => {
           <button
             className="bg-white p-2 rounded-lg shadow-md"
             onClick={handleSwapTokens}
+            disabled={isLoading}
           >
             <svg
               className="w-5 h-5"
