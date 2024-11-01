@@ -12,6 +12,7 @@ import {
   IconSettings,
   IconArrowsUpDown,
 } from "@tabler/icons-react";
+import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 const odosService = new OdosService();
 
 const Swap = () => {
@@ -57,16 +58,16 @@ const Swap = () => {
     }, 1000);
   }, []);
 
-  useEffect(() => {
-    if (isAutoRefreshing) {
-      startAutoRefresh();
-    }
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, [isAutoRefreshing, startAutoRefresh]);
+  //   useEffect(() => {
+  //     if (isAutoRefreshing) {
+  //       startAutoRefresh();
+  //     }
+  //     return () => {
+  //       if (refreshIntervalRef.current) {
+  //         clearInterval(refreshIntervalRef.current);
+  //       }
+  //     };
+  //   }, [isAutoRefreshing, startAutoRefresh]);
 
   const handleInputChange = async (value: string) => {
     setInputAmount(value);
@@ -198,6 +199,29 @@ const Swap = () => {
     console.log(`Output Value in USD: ${outValueUSD}`);
 
     return exchangeRate;
+  }
+
+  function sendEthereumTransaction(transaction: any) {
+    // send transaction to ethereum
+    sendTransaction(transaction).then((res) => {
+      console.log(res, "res");
+      // send succes toasti
+      // stop loading
+    });
+  }
+
+  function handleSmartOrderRouter() {
+    console.log("handleSmartOrderRouter");
+
+    // assembleTransaction
+    const assembleRequestBody = {
+      userAddr: "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
+      pathId: quote.pathId,
+      simulate: true,
+    };
+    odosService.assembleTransaction(assembleRequestBody).then((res) => {
+      sendEthereumTransaction(res.data.transaction);
+    });
   }
 
   return (
@@ -393,6 +417,7 @@ const Swap = () => {
           whileTap={{ scale: 0.98 }}
           className="w-full mt-6 bg-blue-500 text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading || !!error}
+          onClick={handleSmartOrderRouter}
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">

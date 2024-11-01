@@ -44,6 +44,15 @@ interface TokenResponse {
   };
 }
 
+interface AssembleRequest {
+  userAddr: string; // Checksummed ethereum address
+  pathId: string; // Path ID received from quote response
+  simulate?: boolean; // Optional flag for gas estimation simulation
+  gasPrice?: number; // Optional gas price in gwei
+  slippageLimitPercent?: number; // Optional slippage limit
+  referralCode?: number; // Optional referral code
+}
+
 export class OdosService {
   private readonly api: AxiosInstance;
 
@@ -170,6 +179,7 @@ export class OdosService {
   async getQuote(request: QuoteRequest) {
     try {
       const response = await this.api.post("/sor/quote/v2", request);
+      console.log(response, "response.data");
       return response;
     } catch (error) {
       throw this.handleError("Failed to get quote", error);
@@ -183,5 +193,17 @@ export class OdosService {
       throw new Error(`${message}: ${error.message}`);
     }
     throw new Error(message);
+  }
+
+  async assembleTransaction(assembleRequestBody: AssembleRequest) {
+    try {
+      const response = await this.api.post(
+        "/sor/assemble",
+        assembleRequestBody
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError("Failed to assemble transaction", error);
+    }
   }
 }
