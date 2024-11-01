@@ -1,35 +1,53 @@
 import { TokenInfo } from "@/lib/types";
+import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
 
 const CryptoSelect = ({
-  selectedInputToken,
+  selectedToken,
   tokens,
-  setSelectedInputToken,
-  handleGetQuote,
+  setSelectedToken,
 }: {
-  selectedInputToken: TokenInfo;
+  selectedToken: TokenInfo;
   tokens: TokenInfo[];
-  setSelectedInputToken: (token: TokenInfo) => void;
-  handleGetQuote: () => void;
+  setSelectedToken: (token: TokenInfo) => void;
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block" ref={dropdownRef}>
+      {/* Selected Token Button */}
       <button
         className="flex items-center gap-2 bg-white px-8 py-2 rounded-full shadow-sm hover:bg-gray-50"
-        onClick={() => {
-          const select = document.getElementById("tokenSelect");
-          if (select) {
-            select.click();
-          }
-        }}
+        onClick={() => setIsOpen(!isOpen)}
       >
-        <img
-          src={selectedInputToken.logo}
-          alt={selectedInputToken.symbol}
+        <Image
+          src={`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${selectedToken.symbol.toLowerCase()}.png`}
+          alt={selectedToken.symbol}
           className="w-6 h-6"
+          width={24}
+          height={24}
         />
-        <span className="font-medium">{selectedInputToken.symbol}</span>
+        <span className="font-medium">{selectedToken.symbol}</span>
         <svg
-          className="w-4 h-4 text-gray-600"
+          className={`w-4 h-4 text-gray-600 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -41,27 +59,39 @@ const CryptoSelect = ({
             d="M19 9l-7 7-7-7"
           />
         </svg>
-        <select
-          id="tokenSelect"
-          className="absolute inset-0 w-full opacity-0 cursor-pointer"
-          value={selectedInputToken.address}
-          onChange={(e) => {
-            const selectedToken = tokens.find(
-              (token) => token.address === e.target.value
-            );
-            if (selectedToken) {
-              setSelectedInputToken(selectedToken);
-              handleGetQuote();
-            }
-          }}
-        >
-          {tokens.map((token) => (
-            <option key={token.address} value={token.address}>
-              {token.symbol}
-            </option>
-          ))}
-        </select>
       </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute z-10 mt-2 w-64 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="p-2 max-h-60 overflow-auto">
+            {tokens.map((token) => (
+              <button
+                key={token.address}
+                className={`w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-gray-100 ${
+                  selectedToken.address === token.address ? "bg-gray-50" : ""
+                }`}
+                onClick={() => {
+                  setSelectedToken(token);
+                  setIsOpen(false);
+                }}
+              >
+                <Image
+                  src={`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${token.symbol.toLowerCase()}.png`}
+                  alt={token.symbol}
+                  className="w-6 h-6"
+                  width={24}
+                  height={24}
+                />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">{token.symbol}</span>
+                  <span className="text-xs text-gray-500">{token.symbol}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

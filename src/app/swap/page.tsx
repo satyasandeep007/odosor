@@ -4,15 +4,42 @@ import React, { useEffect, useState } from "react";
 import { OdosService } from "@/lib/services/odos";
 import { TokenInfo } from "@/lib/types";
 import CryptoSelect from "@/components/CryptoSelect";
+
 const odosService = new OdosService();
+
+const getTokenLogo = (symbol: string, address: string) => {
+  const sources = [
+    // Try cryptocurrency-icons first
+    `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${symbol.toLowerCase()}.png`,
+    // Fallback to TrustWallet assets
+    `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`,
+    // Default fallback image
+    "/default-token-logo.png",
+  ];
+
+  // Function to check if image exists
+  const checkImage = (url: string) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(url);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
+  // Return the first working image URL
+  return Promise.any(sources.map(checkImage)).then(
+    (url) => url || sources[sources.length - 1]
+  );
+};
 
 const Swap = () => {
   const [inputAmount, setInputAmount] = useState<string>("1");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
   const [selectedInputToken, setSelectedInputToken] = useState<TokenInfo>({
-    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // ETH
-    symbol: "ETH",
-    logo: "/eth-logo.png",
+    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // ETH
+    symbol: "UNI",
+    logo: "/uni-logo.png",
     decimals: 18,
   });
   const [selectedOutputToken, setSelectedOutputToken] = useState<TokenInfo>({
@@ -26,6 +53,7 @@ const Swap = () => {
   const [error, setError] = useState<string | null>(null);
   const [quote, setQuote] = useState<any>(null);
   const [userBalance, setUserBalance] = useState<string>("0");
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [selectedChain, setSelectedChain] = useState<number>(1); // Ethereum mainnet
   const [tokens, setTokens] = useState<any[]>([]);
 
@@ -34,16 +62,6 @@ const Swap = () => {
     if (value && !isNaN(Number(value))) {
       await handleGetQuote(value);
     }
-  };
-
-  // Handle token selection
-  const handleTokenSelect = (token: TokenInfo, isInput: boolean) => {
-    if (isInput) {
-      setSelectedInputToken(token);
-    } else {
-      setSelectedOutputToken(token);
-    }
-    handleGetQuote();
   };
 
   const loadTokens = async () => {
@@ -66,15 +84,19 @@ const Swap = () => {
 
     setIsLoading(true);
     setError(null);
+    const amountToUse = amount || inputAmount;
+    const amountInDecimals = (
+      Number(amountToUse) * Math.pow(10, selectedInputToken.decimals)
+    ).toString();
 
     try {
-      const quoteData = await odosService.getQuote({
+      const payload = {
         chainId: selectedChain,
         compact: true,
         gasPrice: 20,
         inputTokens: [
           {
-            amount: amount || inputAmount,
+            amount: amountInDecimals,
             tokenAddress: selectedInputToken.address,
           },
         ],
@@ -88,10 +110,28 @@ const Swap = () => {
         slippageLimitPercent: 0.3,
         sourceBlacklist: [],
         sourceWhitelist: [],
-        userAddr: "0x", // Add user address here
-      });
+        userAddr: "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89", // Add user address here
+      };
+      console.log(payload, "payload");
+      const quoteData: any = await odosService.getQuote(payload);
       setQuote(quoteData);
-      setOutputAmount(quoteData.outputTokens[0].amount);
+
+      // Calculate and format the output amount
+      const rawAmount = quoteData?.outAmounts[0] || "0";
+      const formattedAmount = (
+        Number(rawAmount) / Math.pow(10, selectedOutputToken.decimals)
+      ).toString();
+
+      const exchangeRate = calculateDynamicExchangeRate(
+        quoteData.inAmounts[0],
+        quoteData.outAmounts[0],
+        quoteData.inValues[0],
+        quoteData.outValues[0],
+        selectedInputToken.decimals,
+        selectedOutputToken.decimals
+      );
+      setExchangeRate(exchangeRate);
+      setOutputAmount(formattedAmount);
     } catch (err) {
       setError("Failed to get quote");
       console.error(err);
@@ -119,6 +159,35 @@ const Swap = () => {
       loadTokens();
     }
   }, [selectedChain]);
+
+  useEffect(() => {
+    if (!selectedInputToken || !selectedOutputToken) return;
+
+    handleGetQuote();
+  }, [inputAmount, selectedInputToken, selectedOutputToken]);
+
+  function calculateDynamicExchangeRate(
+    inAmount: string,
+    outAmount: string,
+    inValueUSD: string,
+    outValueUSD: string,
+    inDecimals: number,
+    outDecimals: number
+  ) {
+    // Convert inAmount and outAmount based on their respective decimals
+    const inAmountNormalized = Number(inAmount) / 10 ** inDecimals;
+    const outAmountNormalized = Number(outAmount) / 10 ** outDecimals;
+
+    // Calculate exchange rate as USDT per 1 UNI (outAmount per 1 inAmount)
+    const exchangeRate = outAmountNormalized / inAmountNormalized;
+
+    // Log details for verification
+    console.log(`Calculated Exchange Rate (USDT per 1 UNI): ${exchangeRate}`);
+    console.log(`Input Value in USD: ${inValueUSD}`);
+    console.log(`Output Value in USD: ${outValueUSD}`);
+
+    return exchangeRate;
+  }
 
   return (
     <div className="w-full min-h-screen h-full relative bg-[#fafafa] flex items-center justify-center">
@@ -166,14 +235,13 @@ const Swap = () => {
               className="bg-transparent text-4xl w-full outline-none text-[#FF6B6B]"
             />
             <CryptoSelect
-              selectedInputToken={selectedInputToken}
+              selectedToken={selectedInputToken}
               tokens={tokens}
-              setSelectedInputToken={setSelectedInputToken}
-              handleGetQuote={handleGetQuote}
+              setSelectedToken={setSelectedInputToken}
             />
           </div>
           <div className="text-gray-500 mt-1">
-            ${quote?.outputTokens[0]?.usdValue || "0.00"}
+            {/* ${quote?.outputTokens[0]?.usdValue || "0.00"} */}
           </div>
           <div className="flex justify-between items-center mt-1">
             <span className="text-gray-500 flex items-center gap-1">
@@ -192,7 +260,10 @@ const Swap = () => {
               </svg>
               {userBalance} {selectedInputToken.symbol}
             </span>
-            <button className="text-gray-400" onClick={handleMaxClick}>
+            <button
+              className="text-gray-400"
+              //  onClick={handleMaxClick}
+            >
               Max
             </button>
           </div>
@@ -228,63 +299,49 @@ const Swap = () => {
           <div className="flex justify-between items-center">
             <input
               type="text"
-              defaultValue="2503.23"
+              value={outputAmount}
+              readOnly
               className="bg-transparent text-4xl w-full outline-none"
             />
             <CryptoSelect
-              selectedInputToken={selectedInputToken}
+              selectedToken={selectedOutputToken}
               tokens={tokens}
-              setSelectedInputToken={setSelectedInputToken}
-              handleGetQuote={handleGetQuote}
+              setSelectedToken={setSelectedOutputToken}
             />
           </div>
-          <div className="text-gray-500 mt-1">$2,503.90</div>
+          <div className="text-gray-500 mt-1">
+            0 {selectedOutputToken.symbol}
+          </div>
         </div>
 
         {/* Error message */}
         {error && <div className="text-center text-red-500 mt-4">{error}</div>}
 
-        {/* Exchange rate */}
+        {/* Exchange rate and additional info */}
         {quote && (
-          <div className="mt-4 text-gray-500 text-sm">
-            1 {selectedOutputToken.symbol} = {quote.exchangeRate}{" "}
-            {selectedInputToken.symbol} (${quote.usdPrice})
-          </div>
-        )}
-
-        {/* Network swap banner */}
-        <div className="mt-4 flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
-          <div className="flex gap-1">
-            <img src="/eth-logo.png" alt="" className="w-6 h-6" />
-            <img src="/polygon-logo.png" alt="" className="w-6 h-6 -ml-2" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Swapping across networks</span>
-              <span className="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full">
-                New
+          <div className="mt-4 space-y-2 text-sm text-gray-500">
+            <div className="flex justify-between">
+              <span>Exchange Rate</span>
+              <span>
+                1 {selectedInputToken.symbol} = {exchangeRate.toFixed(3)}{" "}
+                {selectedOutputToken.symbol}
               </span>
             </div>
-            <div className="text-sm text-gray-500">
-              Move ETH, USDC, and more across 8+ networks.
+            <div className="flex justify-between">
+              <span>Output Value</span>
+              <span>
+                $
+                {quote?.outValues
+                  ? Math.abs(quote.outValues[0]).toFixed(3)
+                  : "0.00"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Estimated Gas Fee</span>
+              <span>${quote.gasEstimateValue?.toFixed(4)}</span>
             </div>
           </div>
-          <button className="ml-auto">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
