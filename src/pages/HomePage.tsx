@@ -254,7 +254,7 @@ const HomePage = () => {
   // if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="w-full min-h-screen h-full relative bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="w-full h-full relative bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-xl flex flex-col">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -276,7 +276,7 @@ const HomePage = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-blue-500 text-white px-4 py-1.5 rounded-full text-sm font-medium"
+              className="bg-[#0aa6ec] text-white px-4 py-1.5 rounded-full text-sm font-medium"
             >
               Swap
             </motion.button>
@@ -433,7 +433,7 @@ const HomePage = () => {
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            className="w-full mt-4 bg-blue-500 text-white py-3 rounded-xl font-medium text-sm"
+            className="w-full mt-4 bg-[#0aa6ec] text-white py-3 rounded-xl font-medium text-sm"
             onClick={handleSmartOrderRouter}
           >
             {isLoading ? "Getting Best Price..." : "Swap Tokens"}
