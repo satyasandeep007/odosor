@@ -16,7 +16,7 @@ const Navbar = () => {
           </span>{" "}
           {""}
           <span className="text-[#666666] text-3xl font-semibold font-[Poppins]">
-            WAP
+            OR
           </span>
         </div>
 
