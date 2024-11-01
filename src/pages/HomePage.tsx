@@ -60,7 +60,6 @@ const HomePage = () => {
   const [gasPreference, setGasPreference] = useState<"speed" | "savings">(
     "savings"
   );
-  const [mevProtection, setMevProtection] = useState<boolean>(false);
   const [isSelectingToken, setIsSelectingToken] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -129,7 +128,6 @@ const HomePage = () => {
           sourceBlacklist: [],
           sourceWhitelist: [],
           userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
-          mevProtection: mevProtection,
         };
 
         const quoteData: any = await odosService.getQuote(payload);
@@ -186,7 +184,6 @@ const HomePage = () => {
       selectedChain,
       gasPreference,
       address,
-      mevProtection,
       isMultiSwapMode,
       selectedTokens,
     ]
@@ -292,7 +289,6 @@ const HomePage = () => {
       userAddr: address,
       pathId: quote.pathId,
       simulate: true,
-      mevProtection,
     };
 
     odosService
@@ -617,30 +613,6 @@ const HomePage = () => {
                     </select>
                     <IconChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
-                </div>
-
-                {/* MEV Protection */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IconShieldCheck className="w-4 h-4 text-gray-500" />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">
-                        MEV Protection
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Protect against front-running attacks
-                      </span>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={mevProtection}
-                      onChange={(e) => setMevProtection(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0aa6ec]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0aa6ec]"></div>
-                  </label>
                 </div>
               </div>
             </div>
