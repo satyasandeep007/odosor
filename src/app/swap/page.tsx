@@ -47,7 +47,8 @@ const Swap = () => {
     setRefreshCounter(10);
     refreshIntervalRef.current = setInterval(() => {
       setRefreshCounter((prev) => {
-        if (prev <= 1) {
+        if (prev <= 0) {
+          // Changed from prev <= 1
           handleGetQuote();
           return 10;
         }
