@@ -3,4 +3,5 @@ export interface TokenInfo {
   symbol: string;
   logo?: string;
   decimals: number;
+  name?: string;
 }

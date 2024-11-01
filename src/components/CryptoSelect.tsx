@@ -18,7 +18,7 @@ const CryptoSelect = ({
   const filteredTokens = tokens.filter(
     (token) =>
       token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      token.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      token?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   // Close dropdown when clicking outside
   useEffect(() => {
