@@ -7,6 +7,12 @@ import "react-toastify/dist/ReactToastify.css";
 import { cookieToInitialState } from "wagmi";
 import { config } from "@/lib/wagmiConfig";
 import { headers } from "next/headers";
+import { Montserrat, Poppins } from "next/font/google";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+});
 
 export const metadata: Metadata = {
   title: "Build on 2024",

@@ -1,18 +1,24 @@
 "use client";
 
 import { useAccount } from "wagmi";
+import Image from "next/image";
 
 const Navbar = () => {
   const { isConnected } = useAccount();
 
   return (
-    <nav className="bg-[#0aa6ec] fixed w-full  top-0 left-0">
+    <nav className=" fixed w-full  top-0 left-0">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a href="/" className="flex items-center">
-          <span className="self-center text-2xl font-semibold text-white">
-            ODO X
+        <div className="flex items-center">
+          <Image src="/logo.svg" alt="ODO SWAP" width={24} height={24} />
+          <span className="ml-2 text-[#ff5100] text-3xl font-bold font-[Montserrat]">
+            ODOS
+          </span>{" "}
+          {""}
+          <span className="text-[#666666] text-3xl font-semibold font-[Poppins]">
+            WAP
           </span>
-        </a>
+        </div>
 
         <div className="w-full md:block md:w-auto">
           <div className="w-full flex justify-end">

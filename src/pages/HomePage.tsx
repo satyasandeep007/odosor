@@ -15,6 +15,7 @@ import {
 import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 import { getPrice } from "@/lib/services/quicknode";
 import Image from "next/image";
+import { useAccount } from "wagmi";
 
 const odosService = new OdosService();
 
@@ -38,6 +39,7 @@ const HomePage = () => {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
   const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);
+  const { address } = useAccount();
 
   // Add auto-refresh functionality
   const startAutoRefresh = useCallback(() => {
@@ -223,7 +225,7 @@ const HomePage = () => {
 
     // assembleTransaction
     const assembleRequestBody = {
-      userAddr: "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
+      userAddr: address,
       pathId: quote.pathId,
       simulate: true,
     };
@@ -254,7 +256,7 @@ const HomePage = () => {
   // if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="w-full h-full relative bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="w-full h-full relative flex items-center justify-center p-4">
       <div className="w-full max-w-xl flex flex-col">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
