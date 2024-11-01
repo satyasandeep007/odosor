@@ -33,7 +33,7 @@ const HomePage = () => {
   const [selectedChain, setSelectedChain] = useState<number>(137); // Polygon mainnet
   const [tokens, setTokens] = useState<any[]>([]);
   const [refreshCounter, setRefreshCounter] = useState<number>(10);
-  const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(true);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
   const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);

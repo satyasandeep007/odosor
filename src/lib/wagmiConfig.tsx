@@ -1,14 +1,6 @@
 import { defaultWagmiConfig } from "@web3modal/wagmi/react/config";
-
 import { cookieStorage, createStorage } from "wagmi";
-import {
-  base,
-  baseSepolia,
-  polygonAmoy,
-  polygon,
-  sepolia,
-  mainnet,
-} from "viem/chains";
+import { polygonAmoy, polygon, mainnet } from "viem/chains";
 
 // Get projectId from https://cloud.walletconnect.com
 export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
@@ -23,14 +15,7 @@ export const metadata = {
 };
 
 // Create wagmiConfig
-const chains = [
-  base,
-  baseSepolia,
-  polygonAmoy,
-  polygon,
-  sepolia,
-  mainnet,
-] as const;
+const chains = [polygonAmoy, polygon, mainnet] as const;
 export const config = defaultWagmiConfig({
   chains,
   projectId,
@@ -41,7 +26,6 @@ export const config = defaultWagmiConfig({
   }),
   auth: {
     email: true,
-    // socials: ["github", "google"],
     walletFeatures: false,
   },
 });
