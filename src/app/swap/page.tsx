@@ -4,7 +4,14 @@ import React, { useEffect, useState } from "react";
 import { OdosService } from "@/lib/services/odos";
 import { TokenInfo } from "@/lib/types";
 import CryptoSelect from "@/components/CryptoSelect";
-
+import { useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  IconLoader2,
+  IconRefresh,
+  IconSettings,
+  IconArrowsUpDown,
+} from "@tabler/icons-react";
 const odosService = new OdosService();
 
 const Swap = () => {
@@ -28,6 +35,38 @@ const Swap = () => {
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [selectedChain, setSelectedChain] = useState<number>(1); // Ethereum mainnet
   const [tokens, setTokens] = useState<any[]>([]);
+  const [refreshCounter, setRefreshCounter] = useState<number>(10);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState<boolean>(true);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Add auto-refresh functionality
+  const startAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    setRefreshCounter(10);
+    refreshIntervalRef.current = setInterval(() => {
+      setRefreshCounter((prev) => {
+        if (prev <= 1) {
+          handleGetQuote();
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    if (isAutoRefreshing) {
+      startAutoRefresh();
+    }
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [isAutoRefreshing, startAutoRefresh]);
 
   const handleInputChange = async (value: string) => {
     setInputAmount(value);
@@ -162,160 +201,211 @@ const Swap = () => {
   }
 
   return (
-    <div className="w-full min-h-screen h-full relative bg-[#fafafa] flex items-center justify-center">
-      <div className="bg-white p-6 rounded-3xl shadow-lg w-full max-w-2xl">
-        {/* Navigation tabs */}
-        <div className="flex gap-6 mb-8">
-          <button className="bg-gray-100 px-4 py-2 rounded-full font-medium">
-            Swap
-          </button>
-
-          <button className="ml-auto">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-gray-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="w-full min-h-screen h-full relative bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-blue-500 text-white px-6 py-2 rounded-full font-medium"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </button>
-        </div>
+              Swap
+            </motion.button>
+          </div>
 
-        {/* First input section */}
-        <div className="bg-gray-50 p-4 rounded-2xl mb-2">
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-500">Sell</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <input
-              type="text"
-              value={inputAmount}
-              onChange={(e) => handleInputChange(e.target.value)}
-              className="bg-transparent text-4xl w-full outline-none text-[#FF6B6B]"
-            />
-            <CryptoSelect
-              selectedToken={selectedInputToken}
-              tokens={tokens}
-              setSelectedToken={setSelectedInputToken}
-            />
-          </div>
-          <div className="text-gray-500 mt-1">
-            {/* ${quote?.outputTokens[0]?.usdValue || "0.00"} */}
-          </div>
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-gray-500 flex items-center gap-1">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              {userBalance} {selectedInputToken.symbol}
-            </span>
-            <button
-              className="text-gray-400"
-              //  onClick={handleMaxClick}
+          <div className="flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
             >
-              Max
-            </button>
+              <IconRefresh
+                className={`w-4 h-4 ${isAutoRefreshing ? "animate-spin" : ""}`}
+              />
+              <span className="text-sm">{refreshCounter}s</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-full hover:bg-gray-100"
+            >
+              <IconSettings className="w-5 h-5 text-gray-600" />
+            </motion.button>
           </div>
         </div>
 
-        {/* Swap arrow */}
-        <div className="flex justify-center -my-2 relative z-10">
-          <button
-            className="bg-white p-2 rounded-lg shadow-md"
+        {/* Swap Container */}
+        <div className="relative">
+          {/* Input Token */}
+          <motion.div
+            initial={false}
+            animate={{ scale: isLoading ? 0.98 : 1 }}
+            className="bg-gray-50 p-6 rounded-2xl mb-2 transition-all"
+          >
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-500 font-medium">You Pay</span>
+              <span className="text-gray-500">
+                Balance: {userBalance} {selectedInputToken.symbol}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center gap-4">
+              <input
+                type="text"
+                value={inputAmount}
+                onChange={(e) => handleInputChange(e.target.value)}
+                className="bg-transparent text-4xl w-full outline-none font-medium"
+                placeholder="0.0"
+                disabled={isLoading}
+              />
+              <CryptoSelect
+                selectedToken={selectedInputToken}
+                tokens={tokens}
+                setSelectedToken={setSelectedInputToken}
+                disabled={isLoading}
+              />
+            </div>
+
+            {quote?.inValues && (
+              <div className="text-gray-500 mt-2">
+                ≈ ${Number(quote.inValues[0]).toFixed(2)}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Swap Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleSwapTokens}
             disabled={isLoading}
+            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
-          </button>
-        </div>
+            <IconArrowsUpDown className="w-5 h-5 text-blue-500" />
+          </motion.button>
 
-        {/* Second input section */}
-        <div className="bg-gray-50 p-4 rounded-2xl">
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-500">Buy</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <input
-              type="text"
-              value={outputAmount}
-              readOnly
-              className="bg-transparent text-4xl w-full outline-none"
-            />
-            <CryptoSelect
-              selectedToken={selectedOutputToken}
-              tokens={tokens}
-              setSelectedToken={setSelectedOutputToken}
-            />
-          </div>
-          <div className="text-gray-500 mt-1">
-            0 {selectedOutputToken.symbol}
-          </div>
+          {/* Output Token */}
+          <motion.div
+            initial={false}
+            animate={{ scale: isLoading ? 0.98 : 1 }}
+            className="bg-gray-50 p-6 rounded-2xl"
+          >
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-500 font-medium">You Receive</span>
+            </div>
+
+            <div className="flex justify-between items-center gap-4">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={outputAmount}
+                  readOnly
+                  className="bg-transparent text-4xl w-full outline-none font-medium"
+                  placeholder="0.0"
+                />
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
+                    <IconLoader2 className="w-6 h-6 animate-spin text-blue-500" />
+                  </div>
+                )}
+              </div>
+              <CryptoSelect
+                selectedToken={selectedOutputToken}
+                tokens={tokens}
+                setSelectedToken={setSelectedOutputToken}
+                disabled={isLoading}
+              />
+            </div>
+
+            {quote?.outValues && (
+              <div className="text-gray-500 mt-2">
+                ≈ ${Number(quote.outValues[0]).toFixed(2)}
+              </div>
+            )}
+          </motion.div>
         </div>
 
         {/* Error message */}
-        {error && <div className="text-center text-red-500 mt-4">{error}</div>}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-center text-red-500 mt-4 p-3 bg-red-50 rounded-xl"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Exchange rate and additional info */}
-        {quote && (
-          <div className="mt-4 space-y-2 text-sm text-gray-500">
-            <div className="flex justify-between">
-              <span>Exchange Rate</span>
-              <span>
-                1 {selectedInputToken.symbol} = {exchangeRate.toFixed(3)}{" "}
-                {selectedOutputToken.symbol}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Output Value</span>
-              <span>
-                $
-                {quote?.outValues
-                  ? Math.abs(quote.outValues[0]).toFixed(3)
-                  : "0.00"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Estimated Gas Fee</span>
-              <span>${quote.gasEstimateValue?.toFixed(4)}</span>
-            </div>
-          </div>
-        )}
-      </div>
+        {/* Swap Details */}
+        <AnimatePresence>
+          {quote && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-6 space-y-3 text-sm border-t pt-4"
+            >
+              <div className="flex justify-between text-gray-600">
+                <span>Exchange Rate</span>
+                <span className="font-medium">
+                  1 {selectedInputToken.symbol} = {exchangeRate.toFixed(4)}{" "}
+                  {selectedOutputToken.symbol}
+                </span>
+              </div>
+
+              <div className="flex justify-between text-gray-600">
+                <span>Price Impact</span>
+                <span
+                  className={`font-medium ${
+                    Number(quote.priceImpact) > 0.05
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }`}
+                >
+                  {(Number(quote.priceImpact) * 100).toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="flex justify-between text-gray-600">
+                <span>Network Fee</span>
+                <span className="font-medium">
+                  ${quote.gasEstimateValue?.toFixed(4)}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Swap Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full mt-6 bg-blue-500 text-white py-4 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLoading || !!error}
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <IconLoader2 className="w-5 h-5 animate-spin" />
+              Getting Best Price
+            </span>
+          ) : error ? (
+            "Try Again"
+          ) : (
+            "Swap Tokens"
+          )}
+        </motion.button>
+      </motion.div>
     </div>
   );
 };
