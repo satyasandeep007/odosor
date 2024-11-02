@@ -1,18 +1,12 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import AppKitProvider from "@/app/providers";
 import { Loading } from "@/layout/Loading";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { cookieToInitialState } from "wagmi";
-import { config } from "@/lib/wagmiConfig";
-import { headers } from "next/headers";
-import { Montserrat, Poppins } from "next/font/google";
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
-});
+import { headers } from "next/headers";
+import ContextProvider from "./ProviderContext";
+import { Montserrat, Poppins } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Build on 2024",
@@ -24,21 +18,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialState = cookieToInitialState(config, headers().get("cookie"));
+  const cookies = headers().get("cookie");
 
   return (
     <html lang="en">
       <body className="flex flex-col min-h-screen">
         <main className="flex-grow">
           <Loading>
-            <AppKitProvider initialState={initialState}>
+            <ContextProvider cookies={cookies}>
               {children}
               <ToastContainer
                 position="top-right"
                 autoClose={3000}
                 hideProgressBar={false}
               />
-            </AppKitProvider>
+            </ContextProvider>
           </Loading>
         </main>
       </body>
