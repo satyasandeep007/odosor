@@ -25,10 +25,14 @@ import Image from "next/image";
 import { useAccount, useBalance } from "wagmi";
 import Modal from "@/components/Modal";
 import { formatUnits, parseUnits } from "viem";
+import { toast } from "react-toastify";
+import { useGlobalContext } from "@/app/GlobalContext";
 
 const odosService = new OdosService();
 
 const HomePage = () => {
+  const { sendTransaction } = useGlobalContext();
+
   const [inputAmount, setInputAmount] = useState<string>("0.001");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
   const [selectedInputToken, setSelectedInputToken]: any =
@@ -49,8 +53,6 @@ const HomePage = () => {
   const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
   const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);
   const { address, balance } = useAccount();
-
-  console.log(balance, "balance");
 
   // New state for multi-token swaps
   const [selectedTokens, setSelectedTokens] = useState<
@@ -94,10 +96,9 @@ const HomePage = () => {
     setIsLoading(true);
     try {
       const tokensData = await odosService.getChainTokens(selectedChain);
-      console.log(tokensData, "tokensData");
       setTokens(Array.isArray(tokensData) ? tokensData : []);
       setSelectedInputToken(
-        tokensData.find((token) => token.symbol.toLowerCase() === "usdc.e")
+        tokensData.find((token) => token.symbol.toLowerCase() === "matic")
       );
       setSelectedOutputToken(
         tokensData.find((token) => token.symbol.toLowerCase() === "dai")
@@ -166,7 +167,7 @@ const HomePage = () => {
           slippageLimitPercent: gasPreference === "savings" ? 0.02 * 100 : 0.02,
           sourceBlacklist: [],
           sourceWhitelist: [],
-          userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",
+          userAddr: address,
         };
 
         const quoteData: any = await odosService.getQuote(payload);
@@ -323,13 +324,10 @@ const HomePage = () => {
     return exchangeRate;
   }
 
-  function sendEthereumTransaction(transaction: any) {
-    // send transaction to ethereum
-    sendTransaction(transaction).then((res) => {
-      console.log(res, "res");
-      // send succes toasti
-      // stop loading
-    });
+  async function sendEthereumTransaction(transaction: any) {
+    const hash: any = await sendTransaction(transaction);
+    console.log(hash, "hash");
+    if (hash) toast.success("Transaction sent successfully");
   }
 
   function handleSmartOrderRouter() {
@@ -340,13 +338,14 @@ const HomePage = () => {
     const assembleRequestBody = {
       userAddr: address,
       pathId: quote.pathId,
-      simulate: true,
+      // simulate: true,
     };
 
     odosService
       .assembleTransaction(assembleRequestBody)
       .then((res) => {
-        sendEthereumTransaction(res.data.transaction);
+        console.log(res, "res");
+        sendEthereumTransaction(res.transaction);
       })
       .catch((err) => {
         setError("Failed to assemble transaction");
