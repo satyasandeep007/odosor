@@ -332,14 +332,44 @@ const HomePage = () => {
     console.log(data, isSuccess, "data from home page");
 
     if (isSuccess && data) {
+      // Show success toast
       toast.success(`🦄 Transaction successful! Hash: ${data}`, {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 3000,
       });
 
       console.log("Transaction completed:", data);
+
+      // Reset UI to initial state
+      setTimeout(() => {
+        setInputAmount("0.001"); // Reset to initial input amount
+        setOutputAmount("0"); // Reset output amount
+        setSelectedTokens([]); // Clear multi-token selection
+        setIsMultiSwapMode(false); // Disable multi-token mode
+        setTokenSelectionMode("single"); // Reset to single token mode
+
+        // Reset to default tokens (MATIC and DAI)
+        const defaultInputToken = tokens.find(
+          (token) => token.symbol.toLowerCase() === "matic"
+        );
+        const defaultOutputToken = tokens.find(
+          (token) => token.symbol.toLowerCase() === "dai"
+        );
+
+        setSelectedInputToken(defaultInputToken);
+        setSelectedOutputToken(defaultOutputToken);
+
+        // Clear any errors
+        setError(null);
+
+        // Reset quote
+        setQuote(null);
+
+        // Reset gas preference
+        setGasPreference("savings");
+      }, 3500);
     }
-  }, [data, isSuccess]);
+  }, [data, isSuccess, tokens]);
 
   async function handleSmartOrderRouter() {
     if (!address || !quote) return;
