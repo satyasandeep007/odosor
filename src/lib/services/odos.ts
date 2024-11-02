@@ -88,16 +88,6 @@ export class OdosService {
     );
   }
 
-  // Get all supported currencies
-  async getCurrencies() {
-    try {
-      const response = await this.api.get("/pricing/currencies");
-      return response;
-    } catch (error) {
-      throw this.handleError("Failed to get currencies", error);
-    }
-  }
-
   // Get price for a specific token
   async getTokenPrice(
     chainId: number,
@@ -129,27 +119,6 @@ export class OdosService {
     }
   }
 
-  // Get supported chains
-  async getChains() {
-    try {
-      const response = await this.api.get("/info/chains");
-      console.log(response, "response.data");
-      return response?.chains || [];
-    } catch (error) {
-      throw this.handleError("Failed to get chains", error);
-    }
-  }
-
-  // Get contract info for a chain
-  async getContractInfo(chainId: number) {
-    try {
-      const response = await this.api.get(`/info/contract-info/v2/${chainId}`);
-      return response;
-    } catch (error) {
-      throw this.handleError("Failed to get contract info", error);
-    }
-  }
-
   async getChainTokens(chainId: number) {
     try {
       const response = await this.api.get<TokenResponse>(
@@ -162,16 +131,6 @@ export class OdosService {
       }));
     } catch (error) {
       throw this.handleError("Failed to get chain tokens", error);
-    }
-  }
-
-  // Get liquidity sources for a chain
-  async getLiquiditySources(chainId: number) {
-    try {
-      const response = await this.api.get(`/info/liquidity-sources/${chainId}`);
-      return response;
-    } catch (error) {
-      throw this.handleError("Failed to get liquidity sources", error);
     }
   }
 
@@ -205,10 +164,5 @@ export class OdosService {
     } catch (error) {
       throw this.handleError("Failed to assemble transaction", error);
     }
-  }
-
-  async getCrossChainQuote(payload: any) {
-    const response = await this.api.post("/sor/quote/crosschain", payload);
-    return response.data;
   }
 }

@@ -45,6 +45,7 @@ createAppKit({
     emailShowWallets: false, // default to true
   },
   allWallets: "HIDE",
+  themeMode: "light",
 });
 
 function ContextProvider({

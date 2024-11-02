@@ -28,7 +28,7 @@ import { formatUnits, parseUnits } from "viem";
 const odosService = new OdosService();
 
 const HomePage = () => {
-  const [inputAmount, setInputAmount] = useState<string>("0.1");
+  const [inputAmount, setInputAmount] = useState<string>("0.001");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
   const [selectedInputToken, setSelectedInputToken]: any =
     useState<TokenInfo>();
@@ -144,7 +144,6 @@ const HomePage = () => {
         const payload = {
           chainId: selectedChain,
           compact: true,
-          gasPrice: gasPreference === "savings" ? 0.01125 : 0.01234,
           inputTokens: [
             {
               amount: amountInDecimals,
@@ -163,7 +162,7 @@ const HomePage = () => {
                 },
               ],
           referralCode: 0,
-          slippageLimitPercent: 0.3,
+          slippageLimitPercent: gasPreference === "savings" ? 0.02 * 100 : 0.02,
           sourceBlacklist: [],
           sourceWhitelist: [],
           userAddr: address || "0x5B4d77e199FE8e5090009C72d2a5581C74FEbE89",

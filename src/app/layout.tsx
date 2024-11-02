@@ -9,8 +9,9 @@ import ContextProvider from "./ProviderContext";
 import { Montserrat, Poppins } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: "Build on 2024",
-  description: "Build on 2024.",
+  title: "ODOSOR | BUILD ON 2024",
+  description:
+    "ODOSOR is built on polygon chain using QUICKNODE and ODOS SMART ORDER ROUTING",
 };
 
 export default function RootLayout({
