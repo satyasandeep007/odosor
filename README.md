@@ -1,16 +1,15 @@
-# ODOSOR - ODOS Smart Order Router
+# ODOSOR: Swap smarter, not harder
 
 ![ODOS Interface](/demo/odosor.png)
 
-A decentralized exchange aggregator interface powered by ODOS Protocol, offering optimal token swaps across multiple DEXs with the best possible rates.
+## ODOSOR is a seamless token swaps with social login - powered by smart order routing for the best rates across DeFi
 
 ![ODOS Interface](/demo/Home.png)
 
-## Demo
+## 🚀 Quick Start
 
-- **Live Demo**: [https://odosor.xyz](https://odosor.vercel.app)
-- **Source Code**: [GitHub Repository](https://github.com/satyasandeep007/odosor)
-- **Video Demo**: [Watch on YouTube](https://www.youtube.com/)
+- **GitHub Repo**: [ODOSOR](https://github.com/satyasandeep007/odosor)
+- **Demo Video**: [Watch on YouTube](https://www.youtube.com/)
 
 ## Features
 
@@ -52,8 +51,7 @@ A decentralized exchange aggregator interface powered by ODOS Protocol, offering
 
 ## Supported Networks
 
-- Polygon (MATIC)
-- Ethereum (ETH)
+- Polygon Mainnet (POL)
 - [Add other supported networks]
 
 ## API Integration
@@ -62,8 +60,8 @@ A decentralized exchange aggregator interface powered by ODOS Protocol, offering
 
 The application integrates with ODOS Protocol for:
 
-- Token lists
-- Price quotes
+- Getting Token Lists
+- Getting Price Quotes
 - Smart order routing
 - Transaction assembly
 
@@ -71,8 +69,41 @@ The application integrates with ODOS Protocol for:
 
 Used for:
 
-- Real-time price data
+- Real-time price data using the ODOS Pricing Add-On
 - Blockchain interactions
+
+## Resources
+
+- **Social Wallet**: [0x3Fa33a6e130946111fF64e755De45Fe6037AEb33](https://polygonscan.com/address/0x3Fa33a6e130946111fF64e755De45Fe6037AEb33)
+
+- **Router Swap Transaction**: [0x70f53c5be04297346b21f57fbd00e14403d9ea6ebbcd8136180d00916349de1d](https://polygonscan.com/tx/0x70f53c5be04297346b21f57fbd00e14403d9ea6ebbcd8136180d00916349de1d)
+
+## 📚 Installation & Setup
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/satyasandeep007/odosor
+   cd odosor
+   ```
+
+2. **Install All Dependencies**
+   Run the following command to install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Run the Application**
+   You can start the application with the following command:
+
+   ```bash
+   pnpm run dev
+   ```
+
+## 🚀 Running the App
+
+Visit `http://localhost:3000` in your browser to access the application.
 
 ## Contributing
 
@@ -82,16 +113,24 @@ Used for:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
 ## Acknowledgments
 
 - [ODOS Protocol](https://odos.xyz)
 - [QuickNode](https://quicknode.com)
 - [wagmi](https://wagmi.sh)
 - [Framer Motion](https://www.framer.com/motion/)
+
+## 👥 Meet the Team
+
+<div align="center">
+      <a href="https://github.com/satyasandeep007">
+        <img src="https://github.com/satyasandeep007.png" width="100px;" alt="Sandeep Kumar"/><br />
+        <sub><b>Sandeep Kumar</b></sub>
+      </a><br />
+      <a href="https://www.linkedin.com/in/satyasandeep" title="LinkedIn">💼</a>
+      <a href="https://twitter.com/satyasandeep76" title="Twitter">🐦</a>
+
+</div>
 
 ## Support
 
