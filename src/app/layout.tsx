@@ -6,7 +6,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 import { headers } from "next/headers";
 import ContextProvider from "./ProviderContext";
-import { Montserrat, Poppins } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "ODOSOR | BUILD ON 2024",

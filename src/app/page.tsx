@@ -1,3 +1,5 @@
+"use client";
+
 import Navbar from "@/layout/Navbar";
 import HomePage from "@/pages/HomePage";
 

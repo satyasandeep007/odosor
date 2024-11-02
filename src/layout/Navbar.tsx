@@ -4,7 +4,7 @@ import { useAccount } from "wagmi";
 import Image from "next/image";
 
 const Navbar = () => {
-  const { isConnected } = useAccount();
+  const { isConnected }: any = useAccount();
 
   return (
     <nav className=" fixed w-full  top-0 left-0">
