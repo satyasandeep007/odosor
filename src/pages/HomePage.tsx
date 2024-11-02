@@ -13,20 +13,17 @@ import {
   IconSettings,
   IconArrowsUpDown,
   IconLayoutGrid,
-  IconArrowsExchange,
   IconGasStation,
   IconChevronDown,
-  IconShieldCheck,
   IconX,
 } from "@tabler/icons-react";
 import { getPrice } from "@/lib/services/quicknode";
 import Image from "next/image";
 import { useAccount, useBalance } from "wagmi";
 import Modal from "@/components/Modal";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits } from "viem";
 import { toast } from "react-toastify";
-import { useGlobalContext } from "@/app/GlobalContext";
-import { Bounce } from "react-toastify";
+
 import { useSendTransaction } from "wagmi";
 
 const odosService = new OdosService();
