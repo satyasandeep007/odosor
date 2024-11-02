@@ -9,7 +9,7 @@
 ## 🚀 Quick Start
 
 - **GitHub Repo**: [ODOSOR](https://github.com/satyasandeep007/odosor)
-- **Demo Video**: [Watch on YouTube](https://www.youtube.com/)
+- **Demo Video**: [Watch on YouTube](https://youtu.be/3wrnsVeXUGg/)
 
 ## The Problem it Solves
 
