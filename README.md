@@ -8,7 +8,7 @@ A decentralized exchange aggregator interface powered by ODOS Protocol, offering
 
 ## Demo
 
-- **Live Demo**: [https://odosor.xyz](https://odosor.xyz)
+- **Live Demo**: [https://odosor.xyz](https://odosor.vercel.app)
 - **Source Code**: [GitHub Repository](https://github.com/satyasandeep007/odosor)
 - **Video Demo**: [Watch on YouTube](https://www.youtube.com/)
 
