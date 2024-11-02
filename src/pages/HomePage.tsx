@@ -19,7 +19,6 @@ import {
   IconShieldCheck,
   IconX,
 } from "@tabler/icons-react";
-import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 import { getPrice } from "@/lib/services/quicknode";
 import Image from "next/image";
 import { useAccount, useBalance } from "wagmi";
@@ -27,11 +26,19 @@ import Modal from "@/components/Modal";
 import { formatUnits, parseUnits } from "viem";
 import { toast } from "react-toastify";
 import { useGlobalContext } from "@/app/GlobalContext";
+import { Bounce } from "react-toastify";
+import { useSendTransaction } from "wagmi";
 
 const odosService = new OdosService();
 
 const HomePage = () => {
-  const { sendTransaction } = useGlobalContext();
+  const {
+    data,
+    isLoading: txLoading,
+    isSuccess,
+    sendTransaction,
+  } = useSendTransaction();
+  console.log(data, isSuccess, "data from global context");
 
   const [inputAmount, setInputAmount] = useState<string>("0.001");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
@@ -324,36 +331,46 @@ const HomePage = () => {
     return exchangeRate;
   }
 
-  async function sendEthereumTransaction(transaction: any) {
-    const hash: any = await sendTransaction(transaction);
-    console.log(hash, "hash");
-    if (hash) toast.success("Transaction sent successfully");
-  }
+  useEffect(() => {
+    console.log(data, isSuccess, "data from home page");
 
-  function handleSmartOrderRouter() {
+    if (isSuccess && data) {
+      toast.success(`🦄 Transaction successful! Hash: ${data}`, {
+        position: "top-right",
+        autoClose: 5000,
+      });
+
+      console.log("Transaction completed:", data);
+    }
+  }, [data, isSuccess]);
+
+  async function handleSmartOrderRouter() {
     if (!address || !quote) return;
 
-    setIsLoading(true);
+    try {
+      const assembleRequestBody = {
+        userAddr: address,
+        pathId: quote.pathId,
+      };
 
-    const assembleRequestBody = {
-      userAddr: address,
-      pathId: quote.pathId,
-      // simulate: true,
-    };
+      const res = await odosService.assembleTransaction(assembleRequestBody);
+      console.log("Assembly response:", res);
 
-    odosService
-      .assembleTransaction(assembleRequestBody)
-      .then((res) => {
-        console.log(res, "res");
-        sendEthereumTransaction(res.transaction);
-      })
-      .catch((err) => {
-        setError("Failed to assemble transaction");
-        console.error(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
+      toast.info("🦄 Assembling transaction...");
+
+      // Send transaction and get response with states
+      await sendTransaction(res.transaction);
+
+      // Wait for user to confirm transaction
+      toast.info("Please confirm the transaction in your wallet...");
+    } catch (err: any) {
+      console.error("Transaction failed:", err);
+      toast.error(err.message || "Transaction failed", {
+        position: "top-right",
+        autoClose: 4000,
       });
+      throw err;
+    }
   }
 
   const fetchTokenPrices = async () => {
