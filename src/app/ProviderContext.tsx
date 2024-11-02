@@ -23,30 +23,13 @@ if (!projectId) {
   throw new Error("Project ID is not defined");
 }
 
-// Set up metadata
+// Move metadata definition here
 const metadata = {
   name: "ODOSOR",
   description: "ODOSOR",
   url: "https://odosor.vercel.app",
   icons: ["https://assets.reown.com/reown-profile-pic.png"],
 };
-
-// Create the modal
-createAppKit({
-  adapters: [wagmiAdapter],
-  projectId,
-  networks: [mainnet, arbitrum, avalanche, base, optimism, polygon],
-  defaultNetwork: mainnet,
-  metadata: metadata,
-  features: {
-    analytics: true, // Optional - defaults to your Cloud configuration
-    email: false, // default to true
-    socials: ["google"],
-    emailShowWallets: false, // default to true
-  },
-  allWallets: "HIDE",
-  themeMode: "light",
-});
 
 function ContextProvider({
   children,
@@ -59,6 +42,25 @@ function ContextProvider({
     wagmiAdapter.wagmiConfig as any,
     cookies
   );
+
+  React.useEffect(() => {
+    // Move createAppKit inside the component
+    createAppKit({
+      adapters: [wagmiAdapter],
+      projectId: projectId as string,
+      networks: [mainnet, arbitrum, avalanche, base, optimism, polygon],
+      defaultNetwork: mainnet,
+      metadata: metadata,
+      features: {
+        analytics: true,
+        email: false,
+        socials: ["google"],
+        emailShowWallets: false,
+      },
+      allWallets: "HIDE",
+      themeMode: "light",
+    });
+  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <WagmiProvider

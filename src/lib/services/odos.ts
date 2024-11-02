@@ -94,7 +94,7 @@ export class OdosService {
     tokenAddress: string
   ): Promise<TokenPrice> {
     try {
-      const response = await this.api.get(
+      const response: any = await this.api.get(
         `/pricing/token/${chainId}/${tokenAddress}`
       );
       return response;
@@ -110,7 +110,7 @@ export class OdosService {
   ): Promise<TokenPrice[]> {
     try {
       const addresses = tokenAddresses.join(",");
-      const response = await this.api.get(`/pricing/token/${chainId}`, {
+      const response: any = await this.api.get(`/pricing/token/${chainId}`, {
         params: { token_addresses: addresses },
       });
       return response;
@@ -121,7 +121,7 @@ export class OdosService {
 
   async getChainTokens(chainId: number) {
     try {
-      const response = await this.api.get<TokenResponse>(
+      const response: any = await this.api.get<TokenResponse>(
         `/info/tokens/${chainId}`
       );
       const tokenMap = response?.tokenMap || {};
@@ -137,7 +137,7 @@ export class OdosService {
   // Get quote for a swap
   async getQuote(request: QuoteRequest) {
     try {
-      const response = await this.api.post("/sor/quote/v2", request);
+      const response: any = await this.api.post("/sor/quote/v2", request);
       console.log(response, "response.data");
       return response;
     } catch (error) {
@@ -156,7 +156,7 @@ export class OdosService {
 
   async assembleTransaction(assembleRequestBody: AssembleRequest) {
     try {
-      const response = await this.api.post(
+      const response: any = await this.api.post(
         "/sor/assemble",
         assembleRequestBody
       );

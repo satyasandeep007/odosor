@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -141,7 +142,7 @@ const HomePage = () => {
           }
         }
 
-        const payload = {
+        const payload: any = {
           chainId: selectedChain,
           compact: true,
           inputTokens: [
@@ -190,7 +191,9 @@ const HomePage = () => {
           );
 
           // Update the total output amount
-          setOutputAmount(outputs.reduce((a, b) => a + b, 0).toString());
+          setOutputAmount(
+            outputs.reduce((a: number, b: number) => a + b, 0).toString()
+          );
 
           // Update individual token outputs
           setSelectedTokens((prevTokens) =>
