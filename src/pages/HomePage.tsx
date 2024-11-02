@@ -422,19 +422,32 @@ const HomePage = () => {
     const oldPercentage = newTokens[index].percentage;
     const difference = percentage - oldPercentage;
 
-    // Adjust other tokens' percentages proportionally
-    const remainingTokens = newTokens.filter((_, i) => i !== index);
-    const totalRemainingPercentage = remainingTokens.reduce(
+    // Ensure percentage is within valid range (0-100)
+    const clampedPercentage = Math.min(100, Math.max(0, percentage));
+
+    // Calculate remaining percentage excluding current token
+    const otherTokens = newTokens.filter((_, i) => i !== index);
+    const totalOtherPercentages = otherTokens.reduce(
       (sum, t) => sum + t.percentage,
       0
     );
 
-    remainingTokens.forEach((token) => {
-      token.percentage -=
-        difference * (token.percentage / totalRemainingPercentage);
+    // If total would exceed 100%, adjust other tokens proportionally
+    if (clampedPercentage + totalOtherPercentages > 100) {
+      const scale = (100 - clampedPercentage) / totalOtherPercentages;
+      otherTokens.forEach((token) => {
+        token.percentage *= scale;
+      });
+    }
+
+    // Update the current token's percentage
+    newTokens[index].percentage = clampedPercentage;
+
+    // Round all percentages to handle floating point errors
+    newTokens.forEach((token) => {
+      token.percentage = Math.round(token.percentage * 100) / 100;
     });
 
-    newTokens[index].percentage = percentage;
     setSelectedTokens(newTokens);
   };
 
@@ -854,15 +867,9 @@ const HomePage = () => {
                                   Number(e.target.value)
                                 )
                               }
-                              min="1"
-                              max={
-                                100 -
-                                selectedTokens.reduce(
-                                  (sum, t, i) =>
-                                    i !== index ? sum + t.percentage : sum,
-                                  0
-                                )
-                              }
+                              min="0"
+                              max="100"
+                              step="1"
                               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0aa6ec]"
                             />
                           </div>
@@ -873,10 +880,12 @@ const HomePage = () => {
                               onChange={(e) => {
                                 const value = Math.min(
                                   100,
-                                  Math.max(1, Number(e.target.value))
+                                  Math.max(0, Number(e.target.value))
                                 );
                                 updateTokenPercentage(index, value);
                               }}
+                              min="0"
+                              max="100"
                               className="w-full px-2 py-1 text-sm text-right border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0aa6ec]/20"
                             />
                           </div>
