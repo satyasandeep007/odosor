@@ -63,6 +63,22 @@ const HomePage = () => {
   const [isSelectingToken, setIsSelectingToken] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+  // Add new state for managing token selection mode
+  const [tokenSelectionMode, setTokenSelectionMode] = useState<
+    "single" | "multi"
+  >("single");
+
+  // Add new state for pending tokens
+  const [pendingTokens, setPendingTokens] = useState<
+    {
+      token: TokenInfo;
+      percentage: number;
+    }[]
+  >([]);
+
+  // Add confirmation modal state
+  const [showConfirmSplit, setShowConfirmSplit] = useState(false);
+
   const handleInputChange = async (value: string) => {
     setInputAmount(value);
     if (value && !isNaN(Number(value))) {
@@ -91,17 +107,35 @@ const HomePage = () => {
   // Get quote from Odos
   const handleGetQuote = useCallback(
     async (amount?: string) => {
-      if (!selectedInputToken || (!isMultiSwapMode && !selectedOutputToken))
+      if (
+        !selectedInputToken ||
+        (isMultiSwapMode && selectedTokens.length === 0) ||
+        (!isMultiSwapMode && !selectedOutputToken)
+      ) {
         return;
+      }
 
       setIsLoading(true);
       setError(null);
+
       const amountToUse = amount || inputAmount;
       const amountInDecimals = (
         Number(amountToUse) * Math.pow(10, selectedInputToken.decimals)
       ).toString();
 
       try {
+        // Validate total percentage in multi mode
+        if (isMultiSwapMode) {
+          const totalPercentage = selectedTokens.reduce(
+            (sum, t) => sum + t.percentage,
+            0
+          );
+          if (Math.abs(totalPercentage - 100) > 0.01) {
+            setError("Total percentage must equal 100%");
+            return;
+          }
+        }
+
         const payload = {
           chainId: selectedChain,
           compact: true,
@@ -142,24 +176,33 @@ const HomePage = () => {
           );
         }
 
-        // Calculate and format the output amount
-        if (isMultiSwapMode) {
-          // For multi-token mode, update each token's estimated output
+        // Calculate and format output amounts
+        if (isMultiSwapMode && quoteData.outAmounts) {
           const outputs = quoteData.outAmounts.map(
             (amount: string, index: number) => {
               const token = selectedTokens[index].token;
               return Number(amount) / Math.pow(10, token.decimals);
             }
           );
+
+          // Update the total output amount
           setOutputAmount(outputs.reduce((a, b) => a + b, 0).toString());
-        } else {
-          // For single token mode
-          const rawAmount = quoteData?.outAmounts[0] || "0";
+
+          // Update individual token outputs
+          setSelectedTokens((prevTokens) =>
+            prevTokens.map((token, index) => ({
+              ...token,
+              estimatedOutput: outputs[index],
+            }))
+          );
+        } else if (quoteData.outAmounts?.[0]) {
           const formattedAmount = (
-            Number(rawAmount) / Math.pow(10, selectedOutputToken.decimals)
+            Number(quoteData.outAmounts[0]) /
+            Math.pow(10, selectedOutputToken.decimals)
           ).toString();
           setOutputAmount(formattedAmount);
 
+          // Calculate exchange rate for single token mode
           const exchangeRate = calculateDynamicExchangeRate(
             quoteData.inAmounts[0],
             quoteData.outAmounts[0],
@@ -180,12 +223,12 @@ const HomePage = () => {
     [
       selectedInputToken,
       selectedOutputToken,
+      selectedTokens,
       inputAmount,
       selectedChain,
       gasPreference,
       address,
       isMultiSwapMode,
-      selectedTokens,
     ]
   );
 
@@ -243,10 +286,10 @@ const HomePage = () => {
   }, [selectedChain]);
 
   useEffect(() => {
-    if (!selectedInputToken || !selectedOutputToken) return;
+    if (!selectedInputToken || !selectedOutputToken || isMultiSwapMode) return;
 
     handleGetQuote();
-  }, [inputAmount, selectedInputToken, selectedOutputToken]);
+  }, [inputAmount, selectedInputToken, selectedOutputToken, isMultiSwapMode]);
 
   function calculateDynamicExchangeRate(
     inAmount: string,
@@ -328,15 +371,15 @@ const HomePage = () => {
 
   // Add helper functions for token management
   const addTokenToSplit = (token: TokenInfo) => {
-    if (selectedTokens.length >= 4) {
+    if (pendingTokens.length >= 4) {
       setError("Maximum 4 tokens allowed for split");
       return;
     }
 
     const remainingPercentage =
-      100 - selectedTokens.reduce((sum, t) => sum + t.percentage, 0);
-    setSelectedTokens([
-      ...selectedTokens,
+      100 - pendingTokens.reduce((sum, t) => sum + t.percentage, 0);
+    setPendingTokens([
+      ...pendingTokens,
       { token, percentage: remainingPercentage },
     ]);
   };
@@ -399,6 +442,44 @@ const HomePage = () => {
       }
     };
   }, []);
+
+  // Add function to clear multi-token selection
+  const clearMultiTokenSelection = () => {
+    setSelectedTokens([]);
+    setTokenSelectionMode("single");
+    setIsMultiSwapMode(false);
+  };
+
+  // Modify the token selection and confirmation logic
+  const confirmTokenSplit = () => {
+    if (pendingTokens.length === 0) return;
+
+    // Validate total percentage
+    const totalPercentage = pendingTokens.reduce(
+      (sum, t) => sum + t.percentage,
+      0
+    );
+    if (Math.abs(totalPercentage - 100) > 0.01) {
+      setError("Total percentage must equal 100%");
+      return;
+    }
+
+    setSelectedTokens(pendingTokens);
+    setShowConfirmSplit(false);
+    setIsSelectingToken(false);
+
+    // Trigger quote update with new tokens
+    handleGetQuote();
+  };
+
+  // Add useEffect to initialize pendingTokens when entering multi mode
+  useEffect(() => {
+    if (isMultiSwapMode && selectedTokens.length === 0) {
+      setPendingTokens([]);
+    } else if (!isMultiSwapMode) {
+      setPendingTokens([]);
+    }
+  }, [isMultiSwapMode]);
 
   return (
     <div className="w-full h-full relative flex items-center justify-center p-4">
@@ -477,43 +558,47 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* Swap Button */}
-            <div className="flex justify-center -my-1">
-              <button
-                onClick={handleSwapTokens}
-                className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all"
-              >
-                <IconArrowsUpDown className="w-4 h-4 text-blue-500" />
-              </button>
-            </div>
-
-            {/* Output Token */}
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm text-gray-500">You Receive</span>
+            {/* Swap Button - hide in multi mode */}
+            {!isMultiSwapMode && (
+              <div className="flex justify-center -my-1">
+                <button
+                  onClick={handleSwapTokens}
+                  className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+                >
+                  <IconArrowsUpDown className="w-4 h-4 text-blue-500" />
+                </button>
               </div>
+            )}
 
-              <div className="flex justify-between items-center gap-3">
-                <input
-                  type="text"
-                  value={outputAmount}
-                  readOnly
-                  className="bg-transparent text-2xl w-full outline-none font-medium"
-                  placeholder="0.0"
-                />
-                <CryptoSelect
-                  selectedToken={selectedOutputToken}
-                  tokens={tokens}
-                  setSelectedToken={setSelectedOutputToken}
-                />
-              </div>
-
-              {outputTokenPrice && (
-                <div className="text-xs text-gray-500 mt-1">
-                  ≈ ${(Number(outputAmount) * outputTokenPrice).toFixed(2)}
+            {/* Output Token - show only in single mode */}
+            {!isMultiSwapMode && (
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-500">You Receive</span>
                 </div>
-              )}
-            </div>
+
+                <div className="flex justify-between items-center gap-3">
+                  <input
+                    type="text"
+                    value={outputAmount}
+                    readOnly
+                    className="bg-transparent text-2xl w-full outline-none font-medium"
+                    placeholder="0.0"
+                  />
+                  <CryptoSelect
+                    selectedToken={selectedOutputToken}
+                    tokens={tokens}
+                    setSelectedToken={setSelectedOutputToken}
+                  />
+                </div>
+
+                {outputTokenPrice && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    ≈ ${(Number(outputAmount) * outputTokenPrice).toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Error message */}
@@ -564,7 +649,14 @@ const HomePage = () => {
             {/* Mode Toggles */}
             <div className="flex gap-2 p-1 bg-gray-50 rounded-lg">
               <button
-                onClick={() => setIsMultiSwapMode(!isMultiSwapMode)}
+                onClick={() => {
+                  const newMode = !isMultiSwapMode;
+                  setIsMultiSwapMode(newMode);
+                  setTokenSelectionMode(newMode ? "multi" : "single");
+                  if (!newMode) {
+                    setSelectedTokens([]);
+                  }
+                }}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isMultiSwapMode
                     ? "bg-[#0aa6ec] text-white shadow-sm"
@@ -619,19 +711,32 @@ const HomePage = () => {
 
             {/* Multi-Token Split UI */}
             {isMultiSwapMode && (
-              <div className="bg-gray-50 rounded-xl overflow-hidden">
+              <div className="bg-gray-50 rounded-xl overflow-hidden mt-4">
                 <div className="px-4 py-3 bg-gray-100/50 flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">
                     Token Split
                   </span>
-                  {selectedTokens.length < 4 && (
-                    <button
-                      onClick={() => setIsSelectingToken(true)}
-                      className="text-xs text-[#0aa6ec] hover:text-[#0aa6ec]/80 font-medium"
-                    >
-                      + Add Token
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selectedTokens.length > 0 && (
+                      <button
+                        onClick={clearMultiTokenSelection}
+                        className="text-xs text-red-500 hover:text-red-600 font-medium"
+                      >
+                        Clear Split
+                      </button>
+                    )}
+                    {selectedTokens.length < 4 && (
+                      <button
+                        onClick={() => {
+                          setIsSelectingToken(true);
+                          setPendingTokens([...selectedTokens]);
+                        }}
+                        className="text-xs text-[#0aa6ec] hover:text-[#0aa6ec]/80 font-medium"
+                      >
+                        + Add Token
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-4 space-y-3">
@@ -747,11 +852,19 @@ const HomePage = () => {
               </div>
             )}
 
-            {/* Token Selection Modal */}
+            {/* Token Selection Modal with Confirmation */}
             {isSelectingToken && (
-              <Modal onClose={() => setIsSelectingToken(false)}>
+              <Modal
+                onClose={() => {
+                  setIsSelectingToken(false);
+                  setPendingTokens([...selectedTokens]);
+                }}
+              >
                 <div className="p-4">
                   <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      Select Tokens for Split
+                    </h3>
                     <input
                       type="text"
                       placeholder="Search tokens..."
@@ -765,17 +878,14 @@ const HomePage = () => {
                     {tokens
                       .filter(
                         (token) =>
-                          !selectedTokens.some(
+                          !pendingTokens.some(
                             (t) => t.token.address === token.address
                           )
                       )
                       .map((token) => (
                         <button
                           key={token.address}
-                          onClick={() => {
-                            addTokenToSplit(token);
-                            setIsSelectingToken(false);
-                          }}
+                          onClick={() => addTokenToSplit(token)}
                           className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg"
                         >
                           <Image
@@ -793,6 +903,24 @@ const HomePage = () => {
                           </div>
                         </button>
                       ))}
+                  </div>
+                  <div className="mt-4 flex justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        setIsSelectingToken(false);
+                        setPendingTokens([...selectedTokens]);
+                      }}
+                      className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmTokenSplit}
+                      disabled={pendingTokens.length === 0}
+                      className="px-4 py-2 text-sm bg-[#0aa6ec] text-white rounded-lg disabled:opacity-50"
+                    >
+                      Confirm Split
+                    </button>
                   </div>
                 </div>
               </Modal>
