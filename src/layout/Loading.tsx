@@ -38,6 +38,7 @@ export const Loading = ({ children }: any) => {
           >
             <motion.path
               transform="translate(20, 20)"
+              // d="M25 10 A 15 15 0 1 1 24.99 10.01"
               d="M50 0C22.4 0 0 22.4 0 50s22.4 50 50 50 50-22.4 50-50S77.6 0 50 0zm0 15c19.3 0 35 15.7 35 35S69.3 85 50 85 15 69.3 15 50s15.7-35 35-35zm-25 35l25-25 25 25-25 25-25-25z"
               variants={icon}
               strokeWidth="0.7"
