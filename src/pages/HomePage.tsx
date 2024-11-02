@@ -21,13 +21,14 @@ import {
 import { sendTransaction } from "@/lib/blockchainUtils/sendTransaction";
 import { getPrice } from "@/lib/services/quicknode";
 import Image from "next/image";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import Modal from "@/components/Modal";
+import { formatUnits, parseUnits } from "viem";
 
 const odosService = new OdosService();
 
 const HomePage = () => {
-  const [inputAmount, setInputAmount] = useState<string>("1");
+  const [inputAmount, setInputAmount] = useState<string>("0.1");
   const [outputAmount, setOutputAmount] = useState<string>("2503.23");
   const [selectedInputToken, setSelectedInputToken]: any =
     useState<TokenInfo>();
@@ -46,7 +47,9 @@ const HomePage = () => {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [inputTokenPrice, setInputTokenPrice] = useState<number | null>(null);
   const [outputTokenPrice, setOutputTokenPrice] = useState<number | null>(null);
-  const { address } = useAccount();
+  const { address, balance } = useAccount();
+
+  console.log(balance, "balance");
 
   // New state for multi-token swaps
   const [selectedTokens, setSelectedTokens] = useState<
@@ -92,9 +95,11 @@ const HomePage = () => {
       const tokensData = await odosService.getChainTokens(selectedChain);
       console.log(tokensData, "tokensData");
       setTokens(Array.isArray(tokensData) ? tokensData : []);
-      setSelectedInputToken(tokensData.find((token) => token.symbol === "UNI"));
+      setSelectedInputToken(
+        tokensData.find((token) => token.symbol.toLowerCase() === "usdc.e")
+      );
       setSelectedOutputToken(
-        tokensData.find((token) => token.symbol === "USDT")
+        tokensData.find((token) => token.symbol.toLowerCase() === "dai")
       );
     } catch (err) {
       setError("Failed to load tokens");
@@ -199,7 +204,9 @@ const HomePage = () => {
           const formattedAmount = (
             Number(quoteData.outAmounts[0]) /
             Math.pow(10, selectedOutputToken.decimals)
-          ).toString();
+          )
+            .toFixed(6)
+            .toString();
           setOutputAmount(formattedAmount);
 
           // Calculate exchange rate for single token mode
@@ -481,6 +488,41 @@ const HomePage = () => {
     }
   }, [isMultiSwapMode]);
 
+  // Add balance fetching hook
+  const { data: tokenBalance, refetch: refetchBalance } = useBalance({
+    address: address,
+    token: selectedInputToken?.address as `0x${string}`,
+    chainId: selectedChain,
+    enabled: !!selectedInputToken && !!address,
+  });
+
+  // Add useEffect to update userBalance when tokenBalance changes
+  useEffect(() => {
+    if (tokenBalance) {
+      const formattedBalance = formatUnits(
+        tokenBalance.value,
+        tokenBalance.decimals
+      );
+      setUserBalance(formattedBalance);
+    } else {
+      setUserBalance("0");
+    }
+  }, [tokenBalance]);
+
+  // Add balance refresh functionality
+  const refreshBalance = async () => {
+    if (selectedInputToken && address) {
+      await refetchBalance();
+    }
+  };
+
+  // Add this to your useEffect dependencies where you fetch initial data
+  useEffect(() => {
+    if (selectedInputToken) {
+      refreshBalance();
+    }
+  }, [selectedInputToken?.address, address, selectedChain]);
+
   return (
     <div className="w-full h-full relative flex items-center justify-center p-4">
       <div className="w-full max-w-xl flex flex-col">
@@ -531,9 +573,19 @@ const HomePage = () => {
             <div className="bg-gray-50 p-4 rounded-xl">
               <div className="flex justify-between mb-1">
                 <span className="text-sm text-gray-500">You Pay</span>
-                <span className="text-sm text-gray-500">
-                  Balance: {userBalance} {selectedInputToken?.symbol}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">
+                    Balance: {Number(userBalance).toFixed(4)}{" "}
+                    {selectedInputToken?.symbol}
+                  </span>
+                  <button
+                    onClick={handleMaxClick}
+                    className="text-xs text-[#0aa6ec] font-medium hover:text-[#0aa6ec]/80"
+                    disabled={!userBalance || Number(userBalance) === 0}
+                  >
+                    MAX
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-between items-center gap-3">
@@ -547,7 +599,12 @@ const HomePage = () => {
                 <CryptoSelect
                   selectedToken={selectedInputToken}
                   tokens={tokens}
-                  setSelectedToken={setSelectedInputToken}
+                  setSelectedToken={(token) => {
+                    setSelectedInputToken(token);
+                    // Reset input amount when token changes
+                    setInputAmount("");
+                    setUserBalance("0");
+                  }}
                 />
               </div>
 
