@@ -6,8 +6,6 @@ export async function sendTransaction(transaction: any): Promise<Hash> {
 
     if (!walletClient) throw new Error("Wallet not connected");
 
-    const [address] = await walletClient.getAddresses();
-
     // Send transaction
     const hash = await walletClient.sendTransaction(transaction);
 
