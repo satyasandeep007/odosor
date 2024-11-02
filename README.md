@@ -11,6 +11,16 @@
 - **GitHub Repo**: [ODOSOR](https://github.com/satyasandeep007/odosor)
 - **Demo Video**: [Watch on YouTube](https://www.youtube.com/)
 
+## The Problem it Solves
+
+ODOSOR revolutionizes DeFi trading by solving key challenges:
+
+🔄 **Multi-Token Swaps**: Convert any token into multiple tokens in a single transaction  
+💎 **Best Rates**: Smart order routing finds optimal rates across multiple DEXs  
+🔑 **Easy Access**: Simple social login removes Web3 wallet barriers  
+💨 **Gas Efficiency**: Save on fees with optimized transaction routing  
+🛡️ **User Safety**: Built-in price impact warnings and smart account security
+
 ## Features
 
 ### Core Functionality
@@ -27,7 +37,7 @@
 - **Social Login**: Simple sign-in using Google, Twitter, or other social accounts
 - **Smart Account Management**: Built-in wallet functionality with no external wallet required
 - **Token Search**: Easy-to-use token search and selection interface
-- **Real-time Price Updates**: Dynamic price and rate calculations
+- **Real-time Price Updates**: Dynamic price and rate calculations powered by QuickNode ODOS Pricing Add-On
 - **Responsive Design**: Works seamlessly across desktop and mobile devices
 
 ## Technology Stack
