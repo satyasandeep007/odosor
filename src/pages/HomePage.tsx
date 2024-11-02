@@ -648,9 +648,7 @@ const HomePage = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Image
-                              src={
-                                tokenData.token.logoURI || "/default-token.png"
-                              }
+                              src={`https://assets.odos.xyz/tokens/${tokenData.token.symbol}.webp`}
                               alt={tokenData.token.symbol}
                               width={24}
                               height={24}
@@ -781,7 +779,7 @@ const HomePage = () => {
                           className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg"
                         >
                           <Image
-                            src={token.logoURI || "/default-token.png"}
+                            src={`https://assets.odos.xyz/tokens/${token.symbol}.webp`}
                             alt={token.symbol}
                             width={32}
                             height={32}
