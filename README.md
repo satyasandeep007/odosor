@@ -2,7 +2,7 @@
 
 ## > DeFi's Smart Router - Swap Any Token, Get Best Rates, Zero Hassle ⚡
 
-![ODOS Interface](/demo/odosor.png)
+![ODOS Interface](/demo/ODO_DEMO.png)
 
 ## ODOSOR makes DeFi trading a breeze! 🌊 Just login with your social account, pick your tokens, and let our smart router find the best rates across 900+ sources. Want to split one token into many? We've got you covered - all in a single click! No Web3 wallet? No problem! 🎯
 
@@ -15,7 +15,7 @@ Think of it as your DeFi co-pilot that:
 
 DeFi doesn't have to be rocket science - we made it click-and-swap simple! 🎯
 
-![ODOS Interface](/demo/Home.png)
+![ODOS Interface](/demo/THUMB.png)
 
 ## 🚀 Quick Start
 

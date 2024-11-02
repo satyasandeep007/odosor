@@ -10,14 +10,12 @@ const Navbar = () => {
     <nav className=" fixed w-full  top-0 left-0">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <div className="flex items-center">
-          <Image src="/odosor.png" alt="ODO SWAP" width={140} height={140} />
-          {/* <span className="ml-2 text-[#ff5100] text-3xl font-bold font-[Montserrat]">
-            ODOS
-          </span>{" "}
-          {""}
-          <span className="text-[#666666] text-3xl font-semibold font-[Poppins]">
-            OR
-          </span> */}
+          <Image
+            src="/ODOSOR_NEW.png"
+            alt="ODO SWAP"
+            width={140}
+            height={140}
+          />
         </div>
 
         <div className="w-full md:block md:w-auto">
